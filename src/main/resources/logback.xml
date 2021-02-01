@@ -1,0 +1,30 @@
+<configuration>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>[%logger{36}] %-5level - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="TEST-LOG-FILE" class="ch.qos.logback.core.FileAppender">
+        <file>logs/tests.log</file>
+        <append>false</append>
+
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <Pattern>
+                [%logger{36}] %-5level - %msg%n%n
+            </Pattern>
+        </layout>
+    </appender>
+
+    <root level="debug">
+        <appender-ref ref="TEST-LOG-FILE" />
+    </root>
+
+    <logger name="tests" level="info" additivity="false">
+        <appender-ref ref="TEST-LOG-FILE" />
+    </logger>
+
+    <logger name="hooks" level="info" additivity="false">
+        <appender-ref ref="TEST-LOG-FILE" />
+    </logger>
+</configuration>

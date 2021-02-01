@@ -1,0 +1,575 @@
+{
+	"info": {
+		"_postman_id": "a8dc2d8f-f404-44a0-8bb0-46b4de9b9688",
+		"name": "AuthGuard - Accounts",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "create account",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 201\", function () {",
+							"    pm.response.to.have.status(201);",
+							"    ",
+							"    ",
+							"    let response = pm.response.json();",
+							"    pm.environment.set(\"accountId\", response.id);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "X-IdempotentKey",
+						"value": "idemp:accounts",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{authguard}}/accounts",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"accounts"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "create account-retry same idempotent key",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 409\", function () {",
+							"    pm.response.to.have.status(409);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					},
+					{
+						"key": "X-IdempotentKey",
+						"type": "text",
+						"value": "idemp:accounts"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{authguard}}/accounts",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"accounts"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "create credentials",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 201\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "X-IdempotentKey",
+						"value": "idemp:accounts",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"accountId\": \"{{accountId}}\",\n\t\"identifiers\": [\n\t\t{\n\t\t\t\"identifier\": \"username\",\n\t\t\t\"type\": \"USERNAME\"\n\t\t}\n\t],\n\t\"plainPassword\": \"password\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{authguard}}/credentials",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"credentials"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "create credentials invalid password",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"accountId\": \"{{accountId}}\",\n\t\"identifiers\": [\n\t\t{\n\t\t\t\"identifier\": \"username\",\n\t\t\t\"type\": \"USERNAME\"\n\t\t}\n\t],\n\t\"plainPassword\": \"nocap\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{authguard}}/credentials?X-IdempotentKey=idemp:accounts-invalid-pass",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"credentials"
+					],
+					"query": [
+						{
+							"key": "X-IdempotentKey",
+							"value": "idemp:accounts-invalid-pass"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "create credentials no account ID",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"    ",
+							"    const error = pm.response.json();",
+							"    ",
+							"    pm.expect(error.message).to.have.length.greaterThan(0);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					},
+					{
+						"key": "X-IdempotentKey",
+						"value": "idemp:accounts:no-account-id",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"accountId\": \"this-should-not-exist\",\n\t\"identifiers\": [\n\t\t{\n\t\t\t\"identifier\": \"not-to-be-used\",\n\t\t\t\"type\": \"USERNAME\"\n\t\t}\n\t],\n\t\"plainPassword\": \"password\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{authguard}}/credentials",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"credentials"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "create account with credentials",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 201\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					},
+					{
+						"key": "X-IdempotentKey",
+						"type": "text",
+						"value": "idemp:accounts-complete"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"account\": {\n        \"externalId\": \"external\"\n    },\n    \"credentials\": {\n        \"identifiers\": [\n\t\t{\n\t\t\t\"identifier\": \"complete\",\n\t\t\t\"type\": \"USERNAME\"\n\t\t}\n\t],\n\t\"plainPassword\": \"password\"\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{authguard}}/accounts/complete",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"accounts",
+						"complete"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "deactivate account",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Account is deactivated\", function () {",
+							"    const response = pm.response.json();",
+							"    pm.expect(response.active).to.equal(false);",
+							"})",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{authguard}}/accounts/{{accountId}}/deactivate",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"accounts",
+						"{{accountId}}",
+						"deactivate"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "activate account",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Account is activated\", function () {",
+							"    const response = pm.response.json();",
+							"    pm.expect(response.active).to.equal(true);",
+							"})",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{authguard}}/accounts/{{accountId}}/activate",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"accounts",
+						"{{accountId}}",
+						"activate"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "update email address",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", () => {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Email was updated\", () => {",
+							"    const response = pm.response.json();",
+							"    pm.expect(response.email.email).to.equal(\"new@email.net\");",
+							"})",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": {\n        \"email\": \"new@email.net\"\n    },\n    \"backup\": false\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{authguard}}/accounts/{{accountId}}/email",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"accounts",
+						"{{accountId}}",
+						"email"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "update backup email address",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", () => {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Backup email was updated\", () => {",
+							"    const response = pm.response.json();",
+							"    pm.expect(response.backupEmail.email).to.equal(\"new@email.net\");",
+							"})",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": {\n        \"email\": \"new@email.net\"\n    },\n    \"backup\": true\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{authguard}}/accounts/{{accountId}}/email",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"accounts",
+						"{{accountId}}",
+						"email"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{admin-api-key}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}

@@ -1,0 +1,26 @@
+
+plugins {
+    id 'groovy'
+    id 'application'
+}
+
+repositories {
+    mavenCentral()
+    jcenter()
+}
+
+dependencies {
+    implementation 'org.codehaus.groovy:groovy-all:3.0.7'
+
+    implementation 'com.github.kmehrunes:scenario:0.1.0'
+    implementation 'io.rest-assured:rest-assured:4.0.0'
+    implementation 'ch.qos.logback:logback-classic:1.2.3'
+    implementation 'com.typesafe:config:1.2.0'
+    implementation 'org.apache.commons:commons-lang3:3.11'
+    implementation 'com.icegreen:greenmail:1.6.1'
+}
+
+application {
+    // Define the main class for the application.
+    mainClassName = 'com.authguard.e2e.App'
+}
