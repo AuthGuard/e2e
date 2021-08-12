@@ -91,6 +91,8 @@ class CreateAccount {
 
         Logger.get().info("Created credentials successfully {}", parsed.id)
 
+        context.global().put(ContextKeys.createdCredentials, parsed)
         context.global().put(ContextKeys.accountIdentifiers, parsed.identifiers)
+        context.global().put(ContextKeys.accountPassword, password)
     }
 }

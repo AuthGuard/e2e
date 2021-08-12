@@ -23,17 +23,17 @@ class SetupHooks {
 
         RestAssured.baseURI = baseUrl
 
-        RestAssured.filters(new ResponseLog(),
-                new Filter() {
-                    @Override
-                    Response filter(final FilterableRequestSpecification requestSpec, final FilterableResponseSpecification responseSpec, final FilterContext ctx) {
-                        if (requestSpec != null) {
-                            requestSpec.header(Headers.authorization, "Bearer " + apiKey)
-                        }
-
-                        return ctx.next(requestSpec, responseSpec);
-                    }
-                }
-        )
+//        RestAssured.filters(new ResponseLog(),
+//                new Filter() {
+//                    @Override
+//                    Response filter(final FilterableRequestSpecification requestSpec, final FilterableResponseSpecification responseSpec, final FilterContext ctx) {
+//                        if (requestSpec != null) {
+//                            requestSpec.header(Headers.authorization, "Bearer " + apiKey)
+//                        }
+//
+//                        return ctx.next(requestSpec, responseSpec);
+//                    }
+//                }
+//        )
     }
 }

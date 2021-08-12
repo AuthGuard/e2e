@@ -25,9 +25,10 @@ class AccountScenarios {
                         // account
                         .step("createAccountDuplicateIdempotentKey")
                         // credentials
+                        .step("updatePassword")
                         .step("createCredentialsDuplicateIdempotentKey")
-//                        .step("createCredentialsDuplicateUsername")
-//                        .step("createCredentialsDuplicateEmail")
+                        .step("createCredentialsDuplicateUsername")
+                        .step("createCredentialsDuplicateEmail")
                         .build())
                 .build()
     }
@@ -117,7 +118,7 @@ class AccountScenarios {
                 .when()
                 .post("/credentials")
                 .then()
-                .statusCode(400)
+                .statusCode(409)
                 .extract()
     }
 
@@ -143,7 +144,7 @@ class AccountScenarios {
                 .when()
                 .post("/credentials")
                 .then()
-                .statusCode(400)
+                .statusCode(409)
                 .extract()
     }
 
@@ -191,11 +192,10 @@ class AccountScenarios {
                 .body(JsonOutput.toJson([
                         "email": [
                                 "email": newEmail
-                        ],
-                        "backup": false
+                        ]
                 ]))
                 .when()
-                .patch("/accounts/{accountId}/email")
+                .patch("/accounts/{accountId}")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -218,13 +218,12 @@ class AccountScenarios {
         def response = given()
                 .pathParam("accountId", account.id)
                 .body(JsonOutput.toJson([
-                        "email": [
+                        "backupEmail": [
                                 "email": newEmail
-                        ],
-                        "backup": true
+                        ]
                 ]))
                 .when()
-                .patch("/accounts/{accountId}/email")
+                .patch("/accounts/{accountId}")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -235,5 +234,27 @@ class AccountScenarios {
         assert parsed.backupEmail.email == newEmail : "Backup email was not updated"
         assert parsed.backupEmail.verified == false : "Backup email was verified even though it is not supposed to be"
         assert parsed.email.email != newEmail : "Email was updated when only the backup should have been updated"
+    }
+
+    @Step(name = "Update password")
+    void updatePassword(ScenarioContext context) {
+        def credentials = context.global().get(ContextKeys.createdCredentials)
+        def password = context.global().get(ContextKeys.accountPassword)
+
+        def newPassword = RandomFields.password()
+
+        given()
+                .header(Headers.idempotentKey, UUID.randomUUID().toString())
+                .pathParam("credentialsId", credentials.id)
+                .body(JsonOutput.toJson([
+                        "plainPassword": newPassword
+                ]))
+                .when()
+                .patch("/credentials/{credentialsId}/password")
+                .then()
+                .statusCode(200)
+                .extract()
+
+        context.global().put(ContextKeys.accountPassword, password)
     }
 }

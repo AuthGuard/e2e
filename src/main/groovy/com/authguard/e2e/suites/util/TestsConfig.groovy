@@ -23,4 +23,12 @@ class TestsConfig {
     static String key() {
         return config.getConfig("authguard").getString("key")
     }
+
+    static String otaUsername() {
+        return config.getConfig("authguard").getString("ota_username")
+    }
+
+    static String otaPassword() {
+        return config.getConfig("authguard").getString("ota_password")
+    }
 }

@@ -11,7 +11,6 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "4ef7bfbe-a5ac-419d-a684-5275c19bf9af",
 						"exec": [
 							"pm.test(\"Response code is 201\", () => {",
 							"    pm.expect(pm.response.code).to.equal(201);",
@@ -63,7 +62,6 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "9966bf2f-4cd2-48e5-b3d3-9ef6945914b4",
 						"exec": [
 							"pm.test(\"Status code is 201\", () => {",
 							"    pm.response.to.have.status(201);",
@@ -115,7 +113,6 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "ca62260d-7c75-4c34-aa73-f187131eda42",
 						"exec": [
 							"pm.test(\"Status code is 201\", () => {",
 							"    pm.response.to.have.status(201);",
@@ -188,15 +185,14 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "79012b3d-37bb-4d48-8357-fbabe1b0108e",
 						"exec": [
 							"pm.test(\"Status code is 201\", () => {",
 							"    pm.response.to.have.status(201);",
 							"});",
 							"",
 							"pm.test(\"Set API key\", () => {",
-							"    const tokens = pm.response.json();",
-							"    pm.environment.set(\"admin-api-key\", tokens.token);",
+							"    const response = pm.response.json();",
+							"    pm.environment.set(\"admin-api-key\", response.key);",
 							"})",
 							""
 						],
@@ -236,7 +232,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"accountId\": \"{{admin-account-id}}\",\n\t\"roles\": [\n\t\t\"authguard_admin_client\"\n\t]\n}",
+					"raw": "{\n\t\"appId\": \"{{admin-app-id}}\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -244,13 +240,95 @@
 					}
 				},
 				"url": {
-					"raw": "{{authguard}}/keys/{{admin-app-id}}",
+					"raw": "{{authguard}}/keys/",
 					"host": [
 						"{{authguard}}"
 					],
 					"path": [
 						"keys",
-						"{{admin-app-id}}"
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get config",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response code is 200\", () => {",
+							"    pm.expect(pm.response.code).to.equal(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{admin-api-key}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{authguard}}/admin/config",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"admin",
+						"config"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get bindings",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response code is 200\", () => {",
+							"    pm.expect(pm.response.code).to.equal(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{admin-api-key}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{authguard}}/admin/bindings",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"admin",
+						"bindings"
 					]
 				}
 			},
@@ -276,7 +354,6 @@
 		{
 			"listen": "prerequest",
 			"script": {
-				"id": "c1f231d4-ea38-41d5-a281-c50aca7e087a",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -286,13 +363,11 @@
 		{
 			"listen": "test",
 			"script": {
-				"id": "164221e8-4edf-44a4-a9eb-e03f5416088b",
 				"type": "text/javascript",
 				"exec": [
 					""
 				]
 			}
 		}
-	],
-	"protocolProfileBehavior": {}
+	]
 }

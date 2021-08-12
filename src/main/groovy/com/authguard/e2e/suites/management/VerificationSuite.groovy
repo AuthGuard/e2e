@@ -5,12 +5,16 @@ import com.authguard.e2e.suites.common.CreateAccount
 import com.authguard.e2e.suites.common.GreenMailServerHooks
 import com.authguard.e2e.suites.common.SetupHooks
 import com.authguard.e2e.suites.util.TestsConfig
-import org.scenario.annotations.SuiteDefinition
 import org.scenario.definitions.Suite
 import org.scenario.runners.DefaultOutputHooks
 
 class VerificationSuite {
-    @SuiteDefinition
+    /*
+     * Due to an issue with GreenMail not reading the emails correctly,
+     * even though an external SMTP server does, we need to disable this
+     * for now.
+     */
+//    @SuiteDefinition
     Suite verificationSuite() {
         return new Suite.Builder()
                 .name("Verification suite")
