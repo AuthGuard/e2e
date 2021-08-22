@@ -25,7 +25,6 @@ class AccountScenarios {
                         // account
                         .step("createAccountDuplicateIdempotentKey")
                         // credentials
-                        .step("updatePassword")
                         .step("createCredentialsDuplicateIdempotentKey")
                         .step("createCredentialsDuplicateUsername")
                         .step("createCredentialsDuplicateEmail")
@@ -234,27 +233,5 @@ class AccountScenarios {
         assert parsed.backupEmail.email == newEmail : "Backup email was not updated"
         assert parsed.backupEmail.verified == false : "Backup email was verified even though it is not supposed to be"
         assert parsed.email.email != newEmail : "Email was updated when only the backup should have been updated"
-    }
-
-    @Step(name = "Update password")
-    void updatePassword(ScenarioContext context) {
-        def credentials = context.global().get(ContextKeys.createdCredentials)
-        def password = context.global().get(ContextKeys.accountPassword)
-
-        def newPassword = RandomFields.password()
-
-        given()
-                .header(Headers.idempotentKey, UUID.randomUUID().toString())
-                .pathParam("credentialsId", credentials.id)
-                .body(JsonOutput.toJson([
-                        "plainPassword": newPassword
-                ]))
-                .when()
-                .patch("/credentials/{credentialsId}/password")
-                .then()
-                .statusCode(200)
-                .extract()
-
-        context.global().put(ContextKeys.accountPassword, password)
     }
 }

@@ -27,6 +27,7 @@ class ApplicationScenarios {
                         .step("activateApp")
                         .step("generateApiKey")
                         .step("getApiKeyByAppId")
+                        .step("verifyApiKey")
                         .step("deleteApiKey")
                         .step("deleteApp")
                         .build())
@@ -126,6 +127,26 @@ class ApplicationScenarios {
         def parsed = Json.slurper.parseText(response.body().asString())
 
         context.put(ContextKeys.temporaryKey, parsed)
+    }
+
+    @Step(name = "Verify the API key")
+    void verifyApiKey(ScenarioContext context) {
+        def apiKey = context.get(ContextKeys.temporaryKey)
+        def app = context.get(ContextKeys.app)
+
+        def response = given()
+                .when()
+                .body(JsonOutput.toJson([
+                        token: apiKey.key
+                ]))
+                .post("/keys/verify")
+                .then()
+                .statusCode(200)
+                .extract()
+
+        def parsed = Json.slurper.parseText(response.body().asString())
+
+        assert parsed.id == app.id
     }
 
     @Step(name = "Get API keys for application")

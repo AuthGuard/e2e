@@ -20,4 +20,8 @@ final class ContextKeys {
     public static final String permissionName = "permissionName"
     public static final String app = "app"
     public static final String temporaryKey = "temporaryKey"
+    public static final String token = "token"
+    public static final String refreshToken = "refreshToken"
+    public static final String oldRefreshToken = "oldRefreshToken"
+    public static final String oldPassword = "oldPassword"
 }
