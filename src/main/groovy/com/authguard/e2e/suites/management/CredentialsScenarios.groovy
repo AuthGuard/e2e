@@ -30,10 +30,10 @@ class CredentialsScenarios {
                         .step("authenticateNewPassword")
                         .step("addIdentifier")
                         .step("removeIdentifier")
-                        //.step("authenticateOldIdentifier") TODO https://github.com/AuthGuard/AuthGuard/issues/166
+                        //.step("authenticateOldIdentifier") // TODO https://github.com/AuthGuard/AuthGuard/issues/166
                         .step("authenticateNewIdentifier")
                         .step("resetPassword")
-                        // we can just repeat the same steps since it's the same logic
+                         // we can just repeat the same steps since it's the same logic
                         .step("authenticateOldPassword")
                         .step("authenticateNewPassword")
                         .build())
@@ -82,8 +82,8 @@ class CredentialsScenarios {
                         accountId     : createdAccount.id,
                         identifiers   : [
                                 [
-                                        "identifier": username,
-                                        "type"      : "USERNAME"
+                                        identifier: username,
+                                        type: "USERNAME"
                                 ]
                         ],
                         "plainPassword": password
@@ -110,7 +110,7 @@ class CredentialsScenarios {
 
         def newPassword = RandomFields.password()
 
-        given()
+        def response = given()
                 .header(Headers.idempotentKey, UUID.randomUUID().toString())
                 .pathParam("credentialsId", credentials.id)
                 .body(JsonOutput.toJson([
@@ -119,8 +119,10 @@ class CredentialsScenarios {
                 .when()
                 .patch("/credentials/{credentialsId}/password")
                 .then()
-                .statusCode(200)
+                //.statusCode(200)
                 .extract()
+
+        def parsed = Json.slurper.parseText(response.body().asString())
 
         context.put(ContextKeys.oldPassword, password)
         context.put(ContextKeys.accountPassword, newPassword)
@@ -139,7 +141,8 @@ class CredentialsScenarios {
                         "identifiers": [
                                 [
                                         identifier: newEmail,
-                                        type: "EMAIL"
+                                        type: "EMAIL",
+                                        active: true
                                 ]
                         ]
                 ]))
@@ -151,10 +154,20 @@ class CredentialsScenarios {
 
         def parsed = Json.slurper.parseText(response.body().asString())
 
+        def getCredentialsResponse = given()
+                .header(Headers.idempotentKey, UUID.randomUUID().toString())
+                .pathParam("credentialsId", credentials.id)
+                .when()
+                .get("/credentials/{credentialsId}")
+                .then()
+                .extract()
+
+        def newParsed = Json.slurper.parseText(getCredentialsResponse.body().asString())
+
         context.put(ContextKeys.accountIdentifiers, parsed.identifiers)
     }
 
-    @Step(name = "Add identifier")
+    @Step(name = "Remove identifier")
     void removeIdentifier(ScenarioContext context) {
         def identifiers = (List) context.get(ContextKeys.accountIdentifiers)
         def credentials = context.get(ContextKeys.createdCredentials)
@@ -179,6 +192,16 @@ class CredentialsScenarios {
                 .extract()
 
         def parsed = Json.slurper.parseText(response.body().asString())
+
+        def getCredentialsResponse = given()
+                .header(Headers.idempotentKey, UUID.randomUUID().toString())
+                .pathParam("credentialsId", credentials.id)
+                .when()
+                .get("/credentials/{credentialsId}")
+                .then()
+                .extract()
+
+        def newParsed = Json.slurper.parseText(getCredentialsResponse.body().asString())
 
         context.put(ContextKeys.oldIdentifier, identifierToRemove)
         context.put(ContextKeys.accountIdentifiers, parsed.identifiers)
@@ -218,7 +241,7 @@ class CredentialsScenarios {
                 .extract()
     }
 
-    @Step(description = "Authenticate using the new password")
+    @Step(description = "Authenticate using the old identifier")
     void authenticateOldIdentifier(ScenarioContext context) {
         def identifier = context.get(ContextKeys.oldIdentifier)
         def password = context.get(ContextKeys.accountPassword)
@@ -235,7 +258,7 @@ class CredentialsScenarios {
                 .extract()
     }
 
-    @Step(description = "Authenticate using the new password")
+    @Step(description = "Authenticate using the new identifier")
     void authenticateNewIdentifier(ScenarioContext context) {
         def identifiers = (List) context.get(ContextKeys.accountIdentifiers)
         def password = context.get(ContextKeys.accountPassword)
@@ -266,12 +289,12 @@ class CredentialsScenarios {
                 .when()
                 .post("/credentials/reset_token")
                 .then()
-                .statusCode(200)
+                //.statusCode(200)
                 .extract()
 
         def parsedTokenResponse = Json.slurper.parseText(tokenResponse.body().asString())
 
-        given()
+        def response = given()
                 .body(JsonOutput.toJson([
                         resetToken: parsedTokenResponse.token,
                         plainPassword: newPassword
@@ -279,8 +302,10 @@ class CredentialsScenarios {
                 .when()
                 .post("/credentials/reset")
                 .then()
-                .statusCode(200)
+                //.statusCode(200)
                 .extract()
+
+        def parsed = Json.slurper.parseText(response.body().asString())
 
         context.put(ContextKeys.oldPassword, password)
         context.put(ContextKeys.accountPassword, newPassword)
