@@ -32,6 +32,9 @@ class CredentialsScenarios {
                         .step("removeIdentifier")
                         //.step("authenticateOldIdentifier") // TODO https://github.com/AuthGuard/AuthGuard/issues/166
                         .step("authenticateNewIdentifier")
+                        .step("replaceIdentifier")
+                        .step("authenticateOldIdentifier")
+                        .step("authenticateNewIdentifier")
                         .step("resetPassword")
                          // we can just repeat the same steps since it's the same logic
                         .step("authenticateOldPassword")
@@ -204,6 +207,38 @@ class CredentialsScenarios {
         def newParsed = Json.slurper.parseText(getCredentialsResponse.body().asString())
 
         context.put(ContextKeys.oldIdentifier, identifierToRemove)
+        context.put(ContextKeys.accountIdentifiers, parsed.identifiers)
+    }
+
+    @Step(name = "Replace identifier")
+    void replaceIdentifier(ScenarioContext context) {
+        def identifiers = (List) context.get(ContextKeys.accountIdentifiers)
+        def credentials = context.get(ContextKeys.createdCredentials)
+
+        def identifierToReplace = identifiers[0].identifier
+        def newUsername = RandomFields.username()
+
+        def response = given()
+                .header(Headers.idempotentKey, UUID.randomUUID().toString())
+                .pathParam("credentialsId", credentials.id)
+                .body(JsonOutput.toJson([
+                        oldIdentifier: identifierToReplace,
+                        identifiers: [
+                                [
+                                        identifier: newUsername,
+                                        type: "USERNAME"
+                                ]
+                        ]
+                ]))
+                .when()
+                .patch("/credentials/{credentialsId}/identifiers")
+                .then()
+                //.statusCode(200)
+                .extract()
+
+        def parsed = Json.slurper.parseText(response.body().asString())
+
+        context.put(ContextKeys.oldIdentifier, identifierToReplace)
         context.put(ContextKeys.accountIdentifiers, parsed.identifiers)
     }
 
