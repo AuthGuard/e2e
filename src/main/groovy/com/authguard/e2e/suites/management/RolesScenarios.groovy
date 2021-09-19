@@ -87,7 +87,7 @@ class RolesScenarios {
 
         def parsed = Json.slurper.parseText(accountResponse.body().asString())
 
-        assert parsed.roles == [ roleName ]
+        assert parsed.roles.contains(roleName)
     }
 
     @Step
@@ -123,7 +123,7 @@ class RolesScenarios {
 
         def parsed = Json.slurper.parseText(accountResponse.body().asString())
 
-        assert parsed.roles == [ ]
+        assert !parsed.roles.contains(roleName)
     }
 
     @Step
@@ -169,7 +169,7 @@ class RolesScenarios {
 
         def parsed = Json.slurper.parseText(accountResponse.body().asString())
 
-        assert parsed.roles == [ ]
+        assert !parsed.roles.contains("made-up")
     }
 
     @Step

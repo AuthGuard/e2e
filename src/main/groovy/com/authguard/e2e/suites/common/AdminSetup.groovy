@@ -8,6 +8,7 @@ import groovy.json.JsonOutput
 import io.restassured.RestAssured
 import io.restassured.filter.Filter
 import io.restassured.filter.FilterContext
+import io.restassured.http.Header
 import io.restassured.response.Response
 import io.restassured.specification.FilterableRequestSpecification
 import io.restassured.specification.FilterableResponseSpecification
@@ -163,7 +164,12 @@ class AdminSetup {
                     @Override
                     Response filter(final FilterableRequestSpecification requestSpec, final FilterableResponseSpecification responseSpec, final FilterContext ctx) {
                         if (requestSpec != null) {
-                            requestSpec.header(Headers.authorization, "Bearer " + apiKey)
+                            def headers = requestSpec.headers
+                            def authorization = headers.get(Headers.authorization)
+
+                            if (authorization == null || authorization.value.isBlank()) {
+                                requestSpec.header(Headers.authorization, "Bearer " + apiKey)
+                            }
                         }
 
                         return ctx.next(requestSpec, responseSpec);

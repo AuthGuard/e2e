@@ -324,7 +324,7 @@ class CredentialsScenarios {
                 .when()
                 .post("/credentials/reset_token")
                 .then()
-                //.statusCode(200)
+                .statusCode(200)
                 .extract()
 
         def parsedTokenResponse = Json.slurper.parseText(tokenResponse.body().asString())

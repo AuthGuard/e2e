@@ -42,6 +42,8 @@ class AccountScenarios {
                         .step("activateAccount")
                         .step("updateEmail")
                         .step("updateBackupEmail")
+                        .step("accountExists")
+                        .step("accountDoesNotExist")
                         .build())
                 .build()
     }
@@ -207,6 +209,8 @@ class AccountScenarios {
         if (parsed.backupEmail) {
             assert parsed.backupEmail.email != newEmail : "Backup email was updated when only the primary should have been updated"
         }
+
+        context.global().put(ContextKeys.createdAccount, parsed)
     }
 
     @Step(name = "Update email")
@@ -233,5 +237,34 @@ class AccountScenarios {
         assert parsed.backupEmail.email == newEmail : "Backup email was not updated"
         assert parsed.backupEmail.verified == false : "Backup email was verified even though it is not supposed to be"
         assert parsed.email.email != newEmail : "Email was updated when only the backup should have been updated"
+
+        context.global().put(ContextKeys.createdAccount, parsed)
+    }
+
+    @Step(name = "Check if account exists")
+    void accountExists(ScenarioContext context) {
+        def account = context.global().get(ContextKeys.createdAccount)
+        def email = account.email.email
+
+        given()
+                .pathParam("email", email)
+                .when()
+                .get("/accounts/email/{email}/exists")
+                .then()
+                .statusCode(200)
+                .extract()
+    }
+
+    @Step(name = "Check if account exists")
+    void accountDoesNotExist(ScenarioContext context) {
+        def email = "nonexistent"
+
+        given()
+                .pathParam("email", email)
+                .when()
+                .get("/accounts/email/{email}/exists")
+                .then()
+                .statusCode(404)
+                .extract()
     }
 }
