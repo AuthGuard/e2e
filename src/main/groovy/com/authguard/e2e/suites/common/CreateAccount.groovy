@@ -37,7 +37,11 @@ class CreateAccount {
                 .header(Headers.idempotentKey, idempotentKey)
                 .body(JsonOutput.toJson([
                         externalId: "external",
-                        email     : [email: RandomFields.email(), verified: false]
+                        email     : [email: RandomFields.email(), verified: false],
+                        metadata  : [
+                                domain: "test-domain",
+                                purpose: "E2E"
+                        ]
                 ]))
                 .when()
                 .post("/accounts")

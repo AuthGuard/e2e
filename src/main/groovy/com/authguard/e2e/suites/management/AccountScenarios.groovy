@@ -3,8 +3,10 @@ package com.authguard.e2e.suites.management
 import com.authguard.e2e.suites.common.ContextKeys
 import com.authguard.e2e.suites.util.Headers
 import com.authguard.e2e.suites.util.Json
+import com.authguard.e2e.suites.util.Logger
 import com.authguard.e2e.suites.util.RandomFields
 import groovy.json.JsonOutput
+import org.scenario.annotations.CircuitBreaker
 import org.scenario.annotations.Name
 import org.scenario.annotations.ScenarioDefinition
 import org.scenario.annotations.Step
@@ -39,6 +41,7 @@ class AccountScenarios {
                 .flow(new ScenarioFlow.Builder()
                         .instance(this)
                         .step("deactivateAccount")
+                        .step("authenticateDeactivatedAccount")
                         .step("activateAccount")
                         .step("updateEmail")
                         .step("updateBackupEmail")
@@ -164,6 +167,24 @@ class AccountScenarios {
         def parsed = Json.slurper.parseText(response.body().asString())
 
         assert parsed.active == false : "Account was not deactivated"
+    }
+
+    @Step(description = "Authenticate with a deactivated account")
+    @CircuitBreaker
+    void authenticateDeactivatedAccount(ScenarioContext context) {
+        def identifiers = (List) context.global().get(ContextKeys.accountIdentifiers)
+        def password = context.global().get(ContextKeys.accountPassword)
+
+        given()
+                .body(JsonOutput.toJson([
+                        identifier: identifiers[0].identifier,
+                        password: password
+                ]))
+                .when()
+                .post("/auth/authenticate")
+                .then()
+                .statusCode(400)
+                .extract()
     }
 
     @Step(name = "Activate account")

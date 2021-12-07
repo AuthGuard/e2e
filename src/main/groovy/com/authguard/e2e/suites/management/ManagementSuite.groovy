@@ -32,6 +32,8 @@ class ManagementSuite {
                 .loadScenarios(new SessionScenarios())
                 .loadScenarios(new CredentialsScenarios())
                 .loadScenarios(new AuthClientScenarios())
+                .loadScenarios(new ActionTokenScenarios())
+//                .loadScenarios(new OtpScenarios())
                 .build()
     }
 }
