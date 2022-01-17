@@ -55,7 +55,9 @@ class AccountScenarios {
     void createAccountDuplicateIdempotentKey(@Name(ContextKeys.idempotentKey) String idempotentKey) {
         given()
                 .header(Headers.idempotentKey, idempotentKey)
-                .body("{}")
+                .body(JsonOutput.toJson([
+                        domain: "e2e"
+                ]))
                 .when()
                 .post("/accounts")
                 .then()
@@ -70,7 +72,8 @@ class AccountScenarios {
         given()
                 .header(Headers.idempotentKey, UUID.randomUUID())
                 .body(JsonOutput.toJson([
-                        email     : [email: account.email.email, verified: false]
+                        email     : [email: account.email.email, verified: false],
+                        domain: "e2e"
                 ]))
                 .when()
                 .post("/accounts")
@@ -91,7 +94,8 @@ class AccountScenarios {
                                         "type"      : "USERNAME"
                                 ]
                         ],
-                        "plainPassword": "some password"
+                        "plainPassword": "some password",
+                        domain: "e2e"
                 ]))
                 .when()
                 .post("/credentials")
@@ -117,7 +121,8 @@ class AccountScenarios {
                                         "type"      : "USERNAME"
                                 ]
                         ],
-                        "plainPassword": RandomFields.password()
+                        "plainPassword": RandomFields.password(),
+                        domain: "e2e"
                 ]))
                 .when()
                 .post("/credentials")
@@ -143,7 +148,8 @@ class AccountScenarios {
                                         "type"      : "EMAIL"
                                 ]
                         ],
-                        "plainPassword": RandomFields.password()
+                        "plainPassword": RandomFields.password(),
+                        domain: "e2e"
                 ]))
                 .when()
                 .post("/credentials")
@@ -178,7 +184,8 @@ class AccountScenarios {
         given()
                 .body(JsonOutput.toJson([
                         identifier: identifiers[0].identifier,
-                        password: password
+                        password: password,
+                        domain: "e2e"
                 ]))
                 .when()
                 .post("/auth/authenticate")
@@ -270,7 +277,7 @@ class AccountScenarios {
         given()
                 .pathParam("email", email)
                 .when()
-                .get("/accounts/email/{email}/exists")
+                .get("/accounts/domain/e2e/email/{email}/exists")
                 .then()
                 .statusCode(200)
                 .extract()

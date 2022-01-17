@@ -33,8 +33,8 @@ class AdminSetup {
         def idempotentKey = RandomStringUtils.randomAlphanumeric(10)
         def authHeader = "Basic " + basicAuth(otaUsername, otaPassword)
 
-        createAccount(context, idempotentKey, authHeader)
-        createCredentials(context, idempotentKey, authHeader)
+        createAccount(context, "global", idempotentKey, authHeader)
+        createCredentials(context, "global", idempotentKey, authHeader)
         createApplication(context, idempotentKey)
 
         def key = createApiKey(context)
@@ -42,13 +42,15 @@ class AdminSetup {
         createRestAssuredInterceptor(key)
     }
 
-    private void createAccount(ScenarioContext context, String idempotentKey, String authHeader) {
+    private void createAccount(ScenarioContext context, String domain,
+                               String idempotentKey, String authHeader) {
         def response = given()
                 .header(Headers.idempotentKey, idempotentKey)
                 .header(Headers.authorization, authHeader)
                 .body(JsonOutput.toJson([
                         externalId: "external",
-                        roles     : ["authguard_admin"]
+                        roles     : ["authguard_admin"],
+                        domain    : domain
                 ]))
                 .when()
                 .post("/accounts")
@@ -63,7 +65,8 @@ class AdminSetup {
         context.global().put(ContextKeys.adminAccount, parsed)
     }
 
-    private void createCredentials(ScenarioContext context, String idempotentKey, String authHeader) {
+    private void createCredentials(ScenarioContext context, String domain,
+                                   String idempotentKey, String authHeader) {
         def adminAccount = context.global().get(ContextKeys.adminAccount)
 
         if (!adminAccount) {
@@ -81,7 +84,8 @@ class AdminSetup {
                                         "type"      : "USERNAME"
                                 ]
                         ],
-                        "plainPassword": "Admin_password"
+                        plainPassword: "Admin_password",
+                        domain: domain
                 ]))
                 .when()
                 .post("/credentials")
@@ -114,7 +118,8 @@ class AdminSetup {
                 .body(JsonOutput.toJson([
                         name: "AuthGuard E2E",
                         accountId: adminAccount.id,
-                        roles     : ["authguard_admin_client"]
+                        roles: ["authguard_admin_client"],
+                        domain: "global"
                 ]))
                 .when()
                 .post("/apps")

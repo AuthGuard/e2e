@@ -39,13 +39,14 @@ class ActionTokenScenarios {
                         action: "reset",
                         basic: [
                                 identifier: identifiers[0].identifier,
-                                password: password
+                                password: password,
+                                domain: "e2e"
                         ]
                 ]))
                 .when()
                 .post("/actions/token")
                 .then()
-                //.statusCode(201)
+                .statusCode(201)
                 .extract()
 
         def parsed = Json.slurper.parseText(response.body().asString())

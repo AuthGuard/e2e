@@ -40,7 +40,8 @@ class PermissionsScenarios {
         def response = given()
                 .body(JsonOutput.toJson([
                         group: permissionGroup,
-                        name: permissionName
+                        name: permissionName,
+                        domain: "e2e"
                 ]))
                 .when()
                 .post("/permissions")
@@ -149,7 +150,8 @@ class PermissionsScenarios {
         given()
                 .body(JsonOutput.toJson([
                         group: permissionGroup,
-                        name: permissionName
+                        name: permissionName,
+                        domain: "e2e"
                 ]))
                 .when()
                 .post("/permissions")

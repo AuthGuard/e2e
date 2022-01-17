@@ -40,7 +40,8 @@ class ApplicationScenarios {
         def response = given()
                 .header(Headers.idempotentKey, idempotentKey)
                 .body(JsonOutput.toJson([
-                        name: "Test scenario app"
+                        name: "Test scenario app",
+                        domain: "e2e"
                 ]))
                 .when()
                 .post("/apps")
@@ -178,14 +179,13 @@ class ApplicationScenarios {
                 .statusCode(200)
                 .extract()
 
-        // TODO uncomment, the bug was fixed in 0.9.0
-//        given()
-//                .pathParam("apiKeyId", apiKey.id)
-//                .when()
-//                .get("/keys/{apiKeyId}")
-//                .then()
-//                .statusCode(404)
-//                .extract()
+        given()
+                .pathParam("apiKeyId", apiKey.id)
+                .when()
+                .get("/keys/{apiKeyId}")
+                .then()
+                .statusCode(404)
+                .extract()
     }
 
 }

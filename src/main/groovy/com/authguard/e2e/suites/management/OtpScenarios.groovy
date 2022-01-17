@@ -36,7 +36,8 @@ class OtpScenarios {
         def response = given()
                 .body(JsonOutput.toJson([
                         identifier: identifiers[0].identifier,
-                        password: password
+                        password: password,
+                        domain: "e2e"
                 ]))
                 .when()
                 .post("/auth/exchange?from=basic&to=otp")

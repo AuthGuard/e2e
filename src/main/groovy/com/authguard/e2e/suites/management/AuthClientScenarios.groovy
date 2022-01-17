@@ -26,6 +26,7 @@ class AuthClientScenarios {
                         .step("createAccountWithRoles")
                         .step("createAccountWithPermissions")
                         .step("createResetToken")
+                        .step("createAccountWithDifferentDomain")
                         .build())
                 .build()
     }
@@ -37,7 +38,8 @@ class AuthClientScenarios {
                 .header(Headers.idempotentKey, UUID.randomUUID().toString())
                 .body(JsonOutput.toJson([
                         name: "Test auth app",
-                        roles: ["authguard_auth_client"]
+                        roles: ["authguard_auth_client"],
+                        domain: "e2e"
                 ]))
                 .when()
                 .post("/apps")
@@ -82,7 +84,8 @@ class AuthClientScenarios {
                 .header(Headers.authorization, "Bearer " + key)
                 .body(JsonOutput.toJson([
                         externalId: "external",
-                        roles: [ "role-1" ]
+                        roles: [ "role-1" ],
+                        domain: "e2e"
                 ]))
                 .when()
                 .post("/accounts")
@@ -105,7 +108,8 @@ class AuthClientScenarios {
                                         group: "test",
                                         name: "read"
                                 ]
-                        ]
+                        ],
+                        domain: "e2e"
                 ]))
                 .when()
                 .post("/accounts")
@@ -122,7 +126,8 @@ class AuthClientScenarios {
         def response = given()
                 .header(Headers.authorization, "Bearer " + key)
                 .body(JsonOutput.toJson([
-                        "identifier": identifiers[0].identifier
+                        "identifier": identifiers[0].identifier,
+                        domain: "e2e"
                 ]))
                 .when()
                 .post("/credentials/reset_token")
@@ -133,5 +138,23 @@ class AuthClientScenarios {
         def parsed = Json.slurper.parseText(response.body().asString())
 
         assert parsed.token == null
+    }
+
+    @Step(description = "Create account with another domain (should be 403)")
+    void createAccountWithDifferentDomain(ScenarioContext context) {
+        def key = context.get(ContextKeys.key)
+
+        given()
+                .header(Headers.idempotentKey, UUID.randomUUID().toString())
+                .header(Headers.authorization, "Bearer " + key)
+                .body(JsonOutput.toJson([
+                        externalId: "external",
+                        domain: "other"
+                ]))
+                .when()
+                .post("/accounts")
+                .then()
+                .statusCode(403)
+                .extract()
     }
 }

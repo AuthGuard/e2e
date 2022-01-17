@@ -14,6 +14,7 @@ class ManagementSuite {
     Suite suite() {
         return new Suite.Builder()
                 .name("Management suite")
+                .addToContext(ContextKeys.domain, "e2e")
                 .addToContext(ContextKeys.baseUrl, TestsConfig.baseUrl())
                 .addToContext(ContextKeys.key, TestsConfig.key())
                 .addToContext(ContextKeys.otaUsername, TestsConfig.otaUsername())

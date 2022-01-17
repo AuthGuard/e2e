@@ -32,7 +32,9 @@ class CreateAccount {
 
     @Step(description = "Create account")
     @CircuitBreaker
-    void createAccount(ScenarioContext context, @Name(ContextKeys.idempotentKey) idempotentKey) {
+    void createAccount(ScenarioContext context,
+                       @Name(ContextKeys.idempotentKey) idempotentKey,
+                       @Name(ContextKeys.domain) domain) {
         def response = given()
                 .header(Headers.idempotentKey, idempotentKey)
                 .body(JsonOutput.toJson([
@@ -41,12 +43,13 @@ class CreateAccount {
                         metadata  : [
                                 domain: "test-domain",
                                 purpose: "E2E"
-                        ]
+                        ],
+                        domain: domain
                 ]))
                 .when()
                 .post("/accounts")
                 .then()
-                .statusCode(201)
+                //.statusCode(201)
                 .extract()
 
         def parsed = Json.slurper.parseText(response.body().asString())
@@ -58,7 +61,9 @@ class CreateAccount {
 
     @Step(description = "Create credentials")
     @CircuitBreaker
-    void createCredentials(ScenarioContext context, @Name(ContextKeys.idempotentKey) idempotentKey) {
+    void createCredentials(ScenarioContext context,
+                           @Name(ContextKeys.idempotentKey) idempotentKey,
+                           @Name(ContextKeys.domain) domain) {
         def createdAccount = context.global().get(ContextKeys.createdAccount)
 
         if (!createdAccount) {
@@ -76,14 +81,17 @@ class CreateAccount {
                         identifiers   : [
                             [
                                     "identifier": username,
-                                    "type"      : "USERNAME"
+                                    "type"      : "USERNAME",
+                                    active: true
                             ],
                             [
                                     "identifier": email,
-                                    "type"      : "EMAIL"
+                                    "type"      : "EMAIL",
+                                    active: true
                             ]
                         ],
-                        "plainPassword": password
+                        "plainPassword": password,
+                        domain: domain
                 ]))
                 .when()
                 .post("/credentials")

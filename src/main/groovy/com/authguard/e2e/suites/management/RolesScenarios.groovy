@@ -39,7 +39,8 @@ class RolesScenarios {
 
         def response = given()
                 .body(JsonOutput.toJson([
-                        "name": roleName
+                        "name": roleName,
+                        domain: "e2e"
                 ]))
                 .when()
                 .post("/roles")
@@ -70,7 +71,7 @@ class RolesScenarios {
         given()
                 .body(JsonOutput.toJson([
                         action: "GRANT",
-                        roles: [ roleName ]
+                        roles: [ roleName ],
                 ]))
                 .when()
                 .patch("/accounts/" + userAccount.id + "/roles")
@@ -132,7 +133,8 @@ class RolesScenarios {
 
         given()
                 .body(JsonOutput.toJson([
-                        "name": roleName
+                        "name": roleName,
+                        domain: "e2e"
                 ]))
                 .when()
                 .post("/roles")

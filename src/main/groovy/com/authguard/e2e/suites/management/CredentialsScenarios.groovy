@@ -30,13 +30,19 @@ class CredentialsScenarios {
                         .step("authenticateNewPassword")
                         .step("addIdentifier")
                         .step("removeIdentifier")
-                        //.step("authenticateOldIdentifier") // TODO https://github.com/AuthGuard/AuthGuard/issues/166
+                        .step("authenticateOldIdentifier") // TODO https://github.com/AuthGuard/AuthGuard/issues/166
                         .step("authenticateNewIdentifier")
                         .step("replaceIdentifier")
                         .step("authenticateOldIdentifier")
                         .step("authenticateNewIdentifier")
-                        .step("resetPassword")
+
+                        .step("resetPasswordByToken")
                          // we can just repeat the same steps since it's the same logic
+                        .step("authenticateOldPassword")
+                        .step("authenticateNewPassword")
+
+                        .step("resetPasswordByOldPassword")
+                        // we can just repeat the same steps since it's the same logic
                         .step("authenticateOldPassword")
                         .step("authenticateNewPassword")
                         .build())
@@ -51,7 +57,8 @@ class CredentialsScenarios {
         def response = given()
                 .header(Headers.idempotentKey, idempotentKey)
                 .body(JsonOutput.toJson([
-                        email     : [email: RandomFields.email(), verified: false]
+                        email     : [email: RandomFields.email(), verified: false],
+                        domain: "e2e"
                 ]))
                 .when()
                 .post("/accounts")
@@ -86,10 +93,12 @@ class CredentialsScenarios {
                         identifiers   : [
                                 [
                                         identifier: username,
-                                        type: "USERNAME"
+                                        type: "USERNAME",
+                                        active: true
                                 ]
                         ],
-                        "plainPassword": password
+                        "plainPassword": password,
+                        domain: "e2e"
                 ]))
                 .when()
                 .post("/credentials")
@@ -226,14 +235,15 @@ class CredentialsScenarios {
                         identifiers: [
                                 [
                                         identifier: newUsername,
-                                        type: "USERNAME"
+                                        type: "USERNAME",
+                                        active: true
                                 ]
                         ]
                 ]))
                 .when()
                 .patch("/credentials/{credentialsId}/identifiers")
                 .then()
-                //.statusCode(200)
+                .statusCode(200)
                 .extract()
 
         def parsed = Json.slurper.parseText(response.body().asString())
@@ -250,7 +260,8 @@ class CredentialsScenarios {
         given()
                 .body(JsonOutput.toJson([
                         identifier: identifiers[0].identifier,
-                        password: password
+                        password: password,
+                        domain: "e2e"
                 ]))
                 .when()
                 .post("/auth/authenticate")
@@ -264,16 +275,20 @@ class CredentialsScenarios {
         def identifiers = (List) context.get(ContextKeys.accountIdentifiers)
         def password = context.get(ContextKeys.accountPassword)
 
-        given()
+        def response = given()
                 .body(JsonOutput.toJson([
                         identifier: identifiers[0].identifier,
-                        password: password
+                        password: password,
+                        domain: "e2e"
                 ]))
                 .when()
                 .post("/auth/authenticate")
                 .then()
-                .statusCode(200)
                 .extract()
+
+        if (response.statusCode() != 200) {
+            throw new TestFailuresExceptions(String.format("Status %d, Body %s", response.statusCode(), response.body().asString()))
+        }
     }
 
     @Step(description = "Authenticate using the old identifier")
@@ -284,7 +299,8 @@ class CredentialsScenarios {
         given()
                 .body(JsonOutput.toJson([
                         identifier: identifier,
-                        password: password
+                        password: password,
+                        domain: "e2e"
                 ]))
                 .when()
                 .post("/auth/authenticate")
@@ -298,20 +314,24 @@ class CredentialsScenarios {
         def identifiers = (List) context.get(ContextKeys.accountIdentifiers)
         def password = context.get(ContextKeys.accountPassword)
 
-        given()
+        def response = given()
                 .body(JsonOutput.toJson([
                         identifier: identifiers[identifiers.size() - 1].identifier,
-                        password: password
+                        password: password,
+                        domain: "e2e"
                 ]))
                 .when()
                 .post("/auth/authenticate")
                 .then()
-                .statusCode(200)
                 .extract()
+
+        if (response.statusCode() != 200) {
+            throw new TestFailuresExceptions(String.format("Status %d, Body %s", response.statusCode(), response.body().asString()))
+        }
     }
 
     @Step(name = "Reset password")
-    void resetPassword(ScenarioContext context) {
+    void resetPasswordByToken(ScenarioContext context) {
         def identifiers = (List) context.get(ContextKeys.accountIdentifiers)
         def password = context.get(ContextKeys.accountPassword)
 
@@ -319,7 +339,8 @@ class CredentialsScenarios {
 
         def tokenResponse = given()
                 .body(JsonOutput.toJson([
-                        "identifier": identifiers[0].identifier
+                        identifier: identifiers[0].identifier,
+                        domain: "e2e"
                 ]))
                 .when()
                 .post("/credentials/reset_token")
@@ -331,13 +352,41 @@ class CredentialsScenarios {
 
         def response = given()
                 .body(JsonOutput.toJson([
+                        byToken: true,
                         resetToken: parsedTokenResponse.token,
-                        plainPassword: newPassword
+                        newPassword: newPassword
                 ]))
                 .when()
                 .post("/credentials/reset")
                 .then()
-                //.statusCode(200)
+                .statusCode(200)
+                .extract()
+
+        def parsed = Json.slurper.parseText(response.body().asString())
+
+        context.put(ContextKeys.oldPassword, password)
+        context.put(ContextKeys.accountPassword, newPassword)
+    }
+
+    @Step(name = "Reset password using old password")
+    void resetPasswordByOldPassword(ScenarioContext context) {
+        def identifiers = (List) context.get(ContextKeys.accountIdentifiers)
+        def password = context.get(ContextKeys.accountPassword)
+
+        def newPassword = RandomFields.password()
+
+        def response = given()
+                .body(JsonOutput.toJson([
+                        byToken: false,
+                        identifier: identifiers[0].identifier,
+                        oldPassword: password,
+                        newPassword: newPassword,
+                        domain: "e2e"
+                ]))
+                .when()
+                .post("/credentials/reset")
+                .then()
+                .statusCode(200)
                 .extract()
 
         def parsed = Json.slurper.parseText(response.body().asString())

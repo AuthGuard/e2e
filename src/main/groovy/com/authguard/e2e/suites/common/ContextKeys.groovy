@@ -1,6 +1,7 @@
 package com.authguard.e2e.suites.common
 
 final class ContextKeys {
+    public static final String domain = "domain"
     public static final String otaUsername = "otaUsername"
     public static final String otaPassword = "otaPassword"
     public static final String createdAccount = "createdAccount"
