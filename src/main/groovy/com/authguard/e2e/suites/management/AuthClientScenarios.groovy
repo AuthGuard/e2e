@@ -27,6 +27,8 @@ class AuthClientScenarios {
                         .step("createAccountWithPermissions")
                         .step("createResetToken")
                         .step("createAccountWithDifferentDomain")
+                        .step("createResetTokenDifferentDomain")
+                        .step("authenticateWithDifferentDomain")
                         .build())
                 .build()
     }
@@ -153,6 +155,41 @@ class AuthClientScenarios {
                 ]))
                 .when()
                 .post("/accounts")
+                .then()
+                .statusCode(403)
+                .extract()
+    }
+
+    @Step(name = "Reset password with different domain (should be 403)")
+    void createResetTokenDifferentDomain(ScenarioContext context) {
+        def key = context.get(ContextKeys.key)
+
+        given()
+                .header(Headers.authorization, "Bearer " + key)
+                .body(JsonOutput.toJson([
+                        "identifier": "identifier",
+                        domain: "other"
+                ]))
+                .when()
+                .post("/credentials/reset_token")
+                .then()
+                .statusCode(403)
+                .extract()
+    }
+
+    @Step(description = "Authenticate with different domain (should be 403)")
+    void authenticateWithDifferentDomain(ScenarioContext context) {
+        def key = context.get(ContextKeys.key)
+
+        given()
+                .header(Headers.authorization, "Bearer " + key)
+                .body(JsonOutput.toJson([
+                        identifier: "identifier",
+                        password: "password",
+                        domain: "other"
+                ]))
+                .when()
+                .post("/auth/authenticate")
                 .then()
                 .statusCode(403)
                 .extract()
