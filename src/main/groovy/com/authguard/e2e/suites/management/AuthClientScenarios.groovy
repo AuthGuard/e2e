@@ -62,7 +62,8 @@ class AuthClientScenarios {
 
         def response = given()
                 .body(JsonOutput.toJson([
-                        appId: app.id
+                        appId: app.id,
+                        keyType: "default"
                 ]))
                 .when()
                 .post("/keys")

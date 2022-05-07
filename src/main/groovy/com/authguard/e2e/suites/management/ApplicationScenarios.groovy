@@ -118,7 +118,8 @@ class ApplicationScenarios {
         def response = given()
                 .when()
                 .body(JsonOutput.toJson([
-                        appId: app.id
+                        appId: app.id,
+                        keyType: "jwtApiKey"
                 ]))
                 .post("/keys")
                 .then()
@@ -138,7 +139,8 @@ class ApplicationScenarios {
         def response = given()
                 .when()
                 .body(JsonOutput.toJson([
-                        token: apiKey.key
+                        key: apiKey.key,
+                        keyType: "jwtApiKey"
                 ]))
                 .post("/keys/verify")
                 .then()

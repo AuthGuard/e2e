@@ -148,7 +148,8 @@ class AdminSetup {
         def response = given()
                 .header(Headers.authorization, authHeader)
                 .body(JsonOutput.toJson([
-                        appId: adminApp.id
+                        appId: adminApp.id,
+                        keyType: "default"
                 ]))
                 .when()
                 .post("/keys")
