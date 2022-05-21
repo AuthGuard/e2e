@@ -24,14 +24,13 @@ class CredentialsScenarios {
                 .flow(new ScenarioFlow.Builder()
                         .instance(this)
                         .step("createAccount")
-                        .step("createCredentials")
                         .step("updatePassword")
                         .step("authenticateOldPassword")
                         .step("authenticateNewPassword")
                         .step("addIdentifier")
+                        .step("authenticateNewIdentifier")
                         .step("removeIdentifier")
                         .step("authenticateOldIdentifier") // TODO https://github.com/AuthGuard/AuthGuard/issues/166
-                        .step("authenticateNewIdentifier")
                         .step("replaceIdentifier")
                         .step("authenticateOldIdentifier")
                         .step("authenticateNewIdentifier")
@@ -53,12 +52,22 @@ class CredentialsScenarios {
     @CircuitBreaker
     void createAccount(ScenarioContext context) {
         def idempotentKey = UUID.randomUUID().toString()
+        def username = RandomFields.username()
+        def password = RandomFields.password()
 
         def response = given()
                 .header(Headers.idempotentKey, idempotentKey)
                 .body(JsonOutput.toJson([
                         email     : [email: RandomFields.email(), verified: false],
-                        domain: "e2e"
+                        domain: "e2e",
+                        identifiers   : [
+                                [
+                                        identifier: username,
+                                        type: "USERNAME",
+                                        active: true
+                                ]
+                        ],
+                        "plainPassword": password,
                 ]))
                 .when()
                 .post("/accounts")
@@ -71,53 +80,13 @@ class CredentialsScenarios {
         Logger.get().info("Created account successfully {}", parsed.id)
 
         context.put(ContextKeys.createdAccount, parsed)
-    }
-
-    @Step(description = "Create credentials")
-    @CircuitBreaker
-    void createCredentials(ScenarioContext context) {
-        def createdAccount = context.get(ContextKeys.createdAccount)
-
-        if (!createdAccount) {
-            throw new TestFailuresExceptions("No account was found in the global context")
-        }
-
-        String idempotentKey = UUID.randomUUID().toString()
-        String username = RandomFields.username()
-        String password = RandomFields.password()
-
-        def response = given()
-                .header(Headers.idempotentKey, idempotentKey)
-                .body(JsonOutput.toJson([
-                        accountId     : createdAccount.id,
-                        identifiers   : [
-                                [
-                                        identifier: username,
-                                        type: "USERNAME",
-                                        active: true
-                                ]
-                        ],
-                        "plainPassword": password,
-                        domain: "e2e"
-                ]))
-                .when()
-                .post("/credentials")
-                .then()
-                .statusCode(201)
-                .extract()
-
-        def parsed = Json.slurper.parseText(response.body().asString())
-
-        Logger.get().info("Created credentials successfully {}", parsed.id)
-
-        context.put(ContextKeys.createdCredentials, parsed)
         context.put(ContextKeys.accountIdentifiers, parsed.identifiers)
         context.put(ContextKeys.accountPassword, password)
     }
 
     @Step(name = "Update password")
     void updatePassword(ScenarioContext context) {
-        def credentials = context.get(ContextKeys.createdCredentials)
+        def credentials = context.get(ContextKeys.createdAccount)
         def password = context.get(ContextKeys.accountPassword)
 
         def newPassword = RandomFields.password()
@@ -131,7 +100,7 @@ class CredentialsScenarios {
                 .when()
                 .patch("/credentials/{credentialsId}/password")
                 .then()
-                //.statusCode(200)
+                .statusCode(200)
                 .extract()
 
         def parsed = Json.slurper.parseText(response.body().asString())
@@ -142,7 +111,7 @@ class CredentialsScenarios {
 
     @Step(name = "Add identifier")
     void addIdentifier(ScenarioContext context) {
-        def credentials = context.get(ContextKeys.createdCredentials)
+        def credentials = context.get(ContextKeys.createdAccount)
 
         def newEmail = RandomFields.email()
 
@@ -170,19 +139,20 @@ class CredentialsScenarios {
                 .header(Headers.idempotentKey, UUID.randomUUID().toString())
                 .pathParam("credentialsId", credentials.id)
                 .when()
-                .get("/credentials/{credentialsId}")
+                .get("/accounts/{credentialsId}")
                 .then()
                 .extract()
 
         def newParsed = Json.slurper.parseText(getCredentialsResponse.body().asString())
 
-        context.put(ContextKeys.accountIdentifiers, parsed.identifiers)
+        context.put(ContextKeys.newIdentifier, newEmail)
+        context.put(ContextKeys.accountIdentifiers, newParsed.identifiers)
     }
 
     @Step(name = "Remove identifier")
     void removeIdentifier(ScenarioContext context) {
         def identifiers = (List) context.get(ContextKeys.accountIdentifiers)
-        def credentials = context.get(ContextKeys.createdCredentials)
+        def credentials = context.get(ContextKeys.createdAccount)
 
         def identifierToRemove = identifiers[0].identifier
 
@@ -209,20 +179,20 @@ class CredentialsScenarios {
                 .header(Headers.idempotentKey, UUID.randomUUID().toString())
                 .pathParam("credentialsId", credentials.id)
                 .when()
-                .get("/credentials/{credentialsId}")
+                .get("/accounts/{credentialsId}")
                 .then()
                 .extract()
 
         def newParsed = Json.slurper.parseText(getCredentialsResponse.body().asString())
 
         context.put(ContextKeys.oldIdentifier, identifierToRemove)
-        context.put(ContextKeys.accountIdentifiers, parsed.identifiers)
+        context.put(ContextKeys.accountIdentifiers, newParsed.identifiers)
     }
 
     @Step(name = "Replace identifier")
     void replaceIdentifier(ScenarioContext context) {
         def identifiers = (List) context.get(ContextKeys.accountIdentifiers)
-        def credentials = context.get(ContextKeys.createdCredentials)
+        def credentials = context.get(ContextKeys.createdAccount)
 
         def identifierToReplace = identifiers[0].identifier
         def newUsername = RandomFields.username()
@@ -248,6 +218,7 @@ class CredentialsScenarios {
 
         def parsed = Json.slurper.parseText(response.body().asString())
 
+        context.put(ContextKeys.newIdentifier, newUsername)
         context.put(ContextKeys.oldIdentifier, identifierToReplace)
         context.put(ContextKeys.accountIdentifiers, parsed.identifiers)
     }
@@ -311,12 +282,12 @@ class CredentialsScenarios {
 
     @Step(description = "Authenticate using the new identifier")
     void authenticateNewIdentifier(ScenarioContext context) {
-        def identifiers = (List) context.get(ContextKeys.accountIdentifiers)
+        def identifier = context.get(ContextKeys.newIdentifier)
         def password = context.get(ContextKeys.accountPassword)
 
         def response = given()
                 .body(JsonOutput.toJson([
-                        identifier: identifiers[identifiers.size() - 1].identifier,
+                        identifier: identifier,
                         password: password,
                         domain: "e2e"
                 ]))

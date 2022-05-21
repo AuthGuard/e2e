@@ -12,7 +12,6 @@ import org.scenario.annotations.Step
 import org.scenario.definitions.Scenario
 import org.scenario.definitions.ScenarioContext
 import org.scenario.definitions.ScenarioFlow
-import org.scenario.exceptions.TestFailuresExceptions
 
 import static io.restassured.RestAssured.given
 
@@ -25,7 +24,6 @@ class CreateAccount {
                 .flow(new ScenarioFlow.Builder()
                         .instance(this)
                         .step("createAccount")
-                        .step("createCredentials")
                         .build())
                 .build()
     }
@@ -35,75 +33,53 @@ class CreateAccount {
     void createAccount(ScenarioContext context,
                        @Name(ContextKeys.idempotentKey) idempotentKey,
                        @Name(ContextKeys.domain) domain) {
+        def email = RandomFields.email()
+        def phoneNumber = RandomFields.phoneNumber()
+        def username = RandomFields.username()
+        def password = RandomFields.password()
+
         def response = given()
                 .header(Headers.idempotentKey, idempotentKey)
                 .body(JsonOutput.toJson([
                         externalId: "external",
-                        email     : [email: RandomFields.email(), verified: false],
+                        email     : [email: email, verified: false],
+                        phoneNumber: [number: phoneNumber, verified: false],
                         metadata  : [
                                 domain: "test-domain",
                                 purpose: "E2E"
                         ],
-                        domain: domain
-                ]))
-                .when()
-                .post("/accounts")
-                .then()
-                //.statusCode(201)
-                .extract()
-
-        def parsed = Json.slurper.parseText(response.body().asString())
-
-        Logger.get().info("Created account successfully {}", parsed.id)
-
-        context.global().put(ContextKeys.createdAccount, parsed)
-    }
-
-    @Step(description = "Create credentials")
-    @CircuitBreaker
-    void createCredentials(ScenarioContext context,
-                           @Name(ContextKeys.idempotentKey) idempotentKey,
-                           @Name(ContextKeys.domain) domain) {
-        def createdAccount = context.global().get(ContextKeys.createdAccount)
-
-        if (!createdAccount) {
-            throw new TestFailuresExceptions("No account was found in the global context")
-        }
-
-        String email = createdAccount.email
-        String username = RandomFields.username()
-        String password = RandomFields.password()
-
-        def response = given()
-                .header(Headers.idempotentKey, idempotentKey)
-                .body(JsonOutput.toJson([
-                        accountId     : createdAccount.id,
                         identifiers   : [
-                            [
-                                    "identifier": username,
-                                    "type"      : "USERNAME",
-                                    active: true
-                            ],
-                            [
-                                    "identifier": email,
-                                    "type"      : "EMAIL",
-                                    active: true
-                            ]
+                                [
+                                        "identifier": username,
+                                        "type"      : "USERNAME",
+                                        active: true
+                                ]
                         ],
                         "plainPassword": password,
                         domain: domain
                 ]))
                 .when()
-                .post("/credentials")
+                .post("/accounts")
                 .then()
                 .statusCode(201)
                 .extract()
 
         def parsed = Json.slurper.parseText(response.body().asString())
 
-        Logger.get().info("Created credentials successfully {}", parsed.id)
+        Logger.get().info("Created account successfully {}", parsed.id)
 
-        context.global().put(ContextKeys.createdCredentials, parsed)
+        def emailIdentifier = parsed.identifiers.find { it.type == "EMAIL" }
+        def phoneNumberIdentifier = parsed.identifiers.find { it.type == "PHONE_NUMBER" }
+
+        assert emailIdentifier != null : "Email identifier was not added"
+        assert emailIdentifier.active : "Email identifier was created but is not active"
+        assert emailIdentifier.domain == domain : "Email identifier was created but with the wrong domain"
+
+        assert phoneNumberIdentifier != null : "Phone number identifier was not added"
+        assert phoneNumberIdentifier.active : "Phone number identifier was created but is not active"
+        assert phoneNumberIdentifier.domain == domain : "Phone number identifier was created but with the wrong domain"
+
+        context.global().put(ContextKeys.createdAccount, parsed)
         context.global().put(ContextKeys.accountIdentifiers, parsed.identifiers)
         context.global().put(ContextKeys.accountPassword, password)
     }

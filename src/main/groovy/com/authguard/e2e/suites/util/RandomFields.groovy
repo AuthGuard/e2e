@@ -7,6 +7,10 @@ class RandomFields {
         return RandomStringUtils.randomAlphabetic(10) + "@test.org"
     }
 
+    static String phoneNumber() {
+        return "+2" + RandomStringUtils.randomNumeric(8)
+    }
+
     static String username() {
         return RandomStringUtils.randomAlphanumeric(10)
     }

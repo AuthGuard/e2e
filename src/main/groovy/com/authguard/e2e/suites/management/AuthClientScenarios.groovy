@@ -4,6 +4,8 @@ import com.authguard.e2e.suites.common.ContextKeys
 import com.authguard.e2e.suites.util.Headers
 import com.authguard.e2e.suites.util.Json
 import com.authguard.e2e.suites.util.Logger
+import com.authguard.e2e.suites.util.RandomFields
+import com.authguard.e2e.suites.util.ResponseAssertions
 import groovy.json.JsonOutput
 import org.scenario.annotations.CircuitBreaker
 import org.scenario.annotations.ScenarioDefinition
@@ -88,6 +90,13 @@ class AuthClientScenarios {
                 .body(JsonOutput.toJson([
                         externalId: "external",
                         roles: [ "role-1" ],
+                        identifiers: [
+                                [
+                                        "identifier": RandomFields.username(),
+                                        "type"      : "USERNAME",
+                                        active: true
+                                ],
+                        ],
                         domain: "e2e"
                 ]))
                 .when()
@@ -112,6 +121,13 @@ class AuthClientScenarios {
                                         name: "read"
                                 ]
                         ],
+                        identifiers: [
+                                [
+                                        "identifier": RandomFields.username(),
+                                        "type"      : "USERNAME",
+                                        active: true
+                                ],
+                        ],
                         domain: "e2e"
                 ]))
                 .when()
@@ -135,8 +151,9 @@ class AuthClientScenarios {
                 .when()
                 .post("/credentials/reset_token")
                 .then()
-                .statusCode(200)
                 .extract()
+
+        ResponseAssertions.assertStatusCode(response, 200)
 
         def parsed = Json.slurper.parseText(response.body().asString())
 
@@ -152,7 +169,14 @@ class AuthClientScenarios {
                 .header(Headers.authorization, "Bearer " + key)
                 .body(JsonOutput.toJson([
                         externalId: "external",
-                        domain: "other"
+                        domain: "other",
+                        identifiers: [
+                                [
+                                        "identifier": RandomFields.username(),
+                                        "type"      : "USERNAME",
+                                        active: true
+                                ],
+                        ],
                 ]))
                 .when()
                 .post("/accounts")

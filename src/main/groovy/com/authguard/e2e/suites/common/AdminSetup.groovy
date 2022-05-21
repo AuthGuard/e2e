@@ -34,7 +34,7 @@ class AdminSetup {
         def authHeader = "Basic " + basicAuth(otaUsername, otaPassword)
 
         createAccount(context, "global", idempotentKey, authHeader)
-        createCredentials(context, "global", idempotentKey, authHeader)
+//        createCredentials(context, "global", idempotentKey, authHeader)
         createApplication(context, idempotentKey)
 
         def key = createApiKey(context)
@@ -50,6 +50,13 @@ class AdminSetup {
                 .body(JsonOutput.toJson([
                         externalId: "external",
                         roles     : ["authguard_admin"],
+                        identifiers   : [
+                                [
+                                        "identifier": "test_admin",
+                                        "type"      : "USERNAME"
+                                ]
+                        ],
+                        plainPassword: "Admin_password",
                         domain    : domain
                 ]))
                 .when()
@@ -63,6 +70,8 @@ class AdminSetup {
         Logger.get().info("Created admin account successfully {}", parsed.id)
 
         context.global().put(ContextKeys.adminAccount, parsed)
+        context.global().put(ContextKeys.adminUsername, "test_admin")
+        context.global().put(ContextKeys.adminPassword, "Admin_password")
     }
 
     private void createCredentials(ScenarioContext context, String domain,

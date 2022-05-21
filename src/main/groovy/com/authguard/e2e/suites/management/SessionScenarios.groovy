@@ -3,6 +3,7 @@ package com.authguard.e2e.suites.management
 import com.authguard.e2e.suites.common.ContextKeys
 import com.authguard.e2e.suites.util.Json
 import com.authguard.e2e.suites.util.Logger
+import com.authguard.e2e.suites.util.ResponseAssertions
 import groovy.json.JsonOutput
 import org.scenario.annotations.CircuitBreaker
 import org.scenario.annotations.ScenarioDefinition
@@ -43,8 +44,9 @@ class SessionScenarios {
                 .when()
                 .post("/auth/exchange?from=basic&to=sessionToken")
                 .then()
-                .statusCode(200)
                 .extract()
+
+        ResponseAssertions.assertStatusCode(response, 200)
 
         def parsed = Json.slurper.parseText(response.body().asString())
 

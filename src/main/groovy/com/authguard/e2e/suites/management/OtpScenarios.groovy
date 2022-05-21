@@ -69,7 +69,7 @@ class OtpScenarios {
                 .when()
                 .post("/otp/verify")
                 .then()
-                //.statusCode(200)
+                .statusCode(200)
                 .extract()
 
         def parsed = Json.slurper.parseText(response.body().asString())

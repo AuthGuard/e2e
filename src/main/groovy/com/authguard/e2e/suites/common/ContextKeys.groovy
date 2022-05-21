@@ -26,4 +26,5 @@ final class ContextKeys {
     public static final String oldRefreshToken = "oldRefreshToken"
     public static final String oldPassword = "oldPassword"
     public static final String oldIdentifier = "oldIdentifier"
+    public static final String newIdentifier = "newIdentifier"
 }

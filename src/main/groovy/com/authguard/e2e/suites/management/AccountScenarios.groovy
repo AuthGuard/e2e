@@ -26,10 +26,7 @@ class AccountScenarios {
                         .instance(this)
                         // account
                         .step("createAccountDuplicateIdempotentKey")
-                        // credentials
-                        .step("createCredentialsDuplicateIdempotentKey")
                         .step("createCredentialsDuplicateUsername")
-                        .step("createCredentialsDuplicateEmail")
                         .build())
                 .build()
     }
@@ -40,15 +37,53 @@ class AccountScenarios {
                 .name("General account management")
                 .flow(new ScenarioFlow.Builder()
                         .instance(this)
+                        .step("createAccount")
                         .step("deactivateAccount")
                         .step("authenticateDeactivatedAccount")
                         .step("activateAccount")
                         .step("updateEmail")
                         .step("updateBackupEmail")
+                        .step("updatePhoneNumber")
                         .step("accountExists")
                         .step("accountDoesNotExist")
                         .build())
                 .build()
+    }
+
+    @Step(description = "Create account")
+    @CircuitBreaker
+    void createAccount(ScenarioContext context) {
+        def idempotentKey = UUID.randomUUID().toString()
+        def username = RandomFields.username()
+        def password = RandomFields.password()
+
+        def response = given()
+                .header(Headers.idempotentKey, idempotentKey)
+                .body(JsonOutput.toJson([
+                        email     : [email: RandomFields.email(), verified: false],
+                        domain: "e2e",
+                        identifiers   : [
+                                [
+                                        identifier: username,
+                                        type: "USERNAME",
+                                        active: true
+                                ]
+                        ],
+                        "plainPassword": password,
+                ]))
+                .when()
+                .post("/accounts")
+                .then()
+                .statusCode(201)
+                .extract()
+
+        def parsed = Json.slurper.parseText(response.body().asString())
+
+        Logger.get().info("Created account successfully {}", parsed.id)
+
+        context.put(ContextKeys.createdAccount, parsed)
+        context.put(ContextKeys.accountIdentifiers, parsed.identifiers)
+        context.put(ContextKeys.accountPassword, password)
     }
 
     @Step(name = "Create account with the same idempotent key")
@@ -56,6 +91,13 @@ class AccountScenarios {
         given()
                 .header(Headers.idempotentKey, idempotentKey)
                 .body(JsonOutput.toJson([
+                        identifiers   : [
+                                [
+                                        "identifier": RandomFields.username(),
+                                        "type"      : "USERNAME",
+                                        active: true
+                                ]
+                        ],
                         domain: "e2e"
                 ]))
                 .when()
@@ -72,33 +114,14 @@ class AccountScenarios {
         given()
                 .header(Headers.idempotentKey, UUID.randomUUID())
                 .body(JsonOutput.toJson([
-                        email     : [email: account.email.email, verified: false],
+                        email     : [
+                                email: account.email.email,
+                                verified: false
+                        ],
                         domain: "e2e"
                 ]))
                 .when()
                 .post("/accounts")
-                .then()
-                .statusCode(409)
-                .extract()
-    }
-
-    @Step(name = "Create credentials with the same idempotent key")
-    void createCredentialsDuplicateIdempotentKey(@Name(ContextKeys.idempotentKey) String idempotentKey) {
-        given()
-                .header(Headers.idempotentKey, idempotentKey)
-                .body(JsonOutput.toJson([
-                        accountId     : "some account",
-                        identifiers   : [
-                                [
-                                        "identifier": "some username",
-                                        "type"      : "USERNAME"
-                                ]
-                        ],
-                        "plainPassword": "some password",
-                        domain: "e2e"
-                ]))
-                .when()
-                .post("/credentials")
                 .then()
                 .statusCode(409)
                 .extract()
@@ -114,7 +137,6 @@ class AccountScenarios {
         given()
                 .header(Headers.idempotentKey, UUID.randomUUID().toString())
                 .body(JsonOutput.toJson([
-                        accountId     : account.id,
                         identifiers   : [
                                 [
                                         "identifier": username,
@@ -125,34 +147,7 @@ class AccountScenarios {
                         domain: "e2e"
                 ]))
                 .when()
-                .post("/credentials")
-                .then()
-                .statusCode(409)
-                .extract()
-    }
-
-    @Step(name = "Create credentials with the same email identifier")
-    void createCredentialsDuplicateEmail(ScenarioContext context) {
-        def account = context.global().get(ContextKeys.createdAccount)
-        def identifiers = context.global().get(ContextKeys.accountIdentifiers)
-
-        def email = identifiers.find { it.type == "EMAIL" }.identifier
-
-        given()
-                .header(Headers.idempotentKey, UUID.randomUUID().toString())
-                .body(JsonOutput.toJson([
-                        accountId     : account.id,
-                        identifiers   : [
-                                [
-                                        "identifier": email,
-                                        "type"      : "EMAIL"
-                                ]
-                        ],
-                        "plainPassword": RandomFields.password(),
-                        domain: "e2e"
-                ]))
-                .when()
-                .post("/credentials")
+                .post("/accounts")
                 .then()
                 .statusCode(409)
                 .extract()
@@ -160,7 +155,7 @@ class AccountScenarios {
 
     @Step(name = "Deactivate account")
     void deactivateAccount(ScenarioContext context) {
-        def account = context.global().get(ContextKeys.createdAccount)
+        def account = context.get(ContextKeys.createdAccount)
 
         def response = given()
                 .pathParam("accountId", account.id)
@@ -179,7 +174,7 @@ class AccountScenarios {
     @CircuitBreaker
     void authenticateDeactivatedAccount(ScenarioContext context) {
         def identifiers = (List) context.global().get(ContextKeys.accountIdentifiers)
-        def password = context.global().get(ContextKeys.accountPassword)
+        def password = context.get(ContextKeys.accountPassword)
 
         given()
                 .body(JsonOutput.toJson([
@@ -196,7 +191,7 @@ class AccountScenarios {
 
     @Step(name = "Activate account")
     void activateAccount(ScenarioContext context) {
-        def account = context.global().get(ContextKeys.createdAccount)
+        def account = context.get(ContextKeys.createdAccount)
 
         def response = given()
                 .pathParam("accountId", account.id)
@@ -213,7 +208,7 @@ class AccountScenarios {
 
     @Step(name = "Update email")
     void updateEmail(ScenarioContext context) {
-        def account = context.global().get(ContextKeys.createdAccount)
+        def account = context.get(ContextKeys.createdAccount)
         def newEmail = RandomFields.email()
 
         def response = given()
@@ -234,16 +229,58 @@ class AccountScenarios {
         assert parsed.email.email == newEmail : "Email was not updated"
         assert parsed.email.verified == false : "Email was verified even though it is not supposed to be"
 
+        def emailIdentifier = parsed.identifiers.find { it.type == "EMAIL" }
+
+        assert emailIdentifier.identifier == newEmail : "Email was updated but the identifier was not"
+        assert emailIdentifier != null : "Email identifier was not added"
+        assert emailIdentifier.active : "Email identifier was created but is not active"
+        assert emailIdentifier.domain == "e2e" : "Email identifier was created but with the wrong domain"
+
         if (parsed.backupEmail) {
             assert parsed.backupEmail.email != newEmail : "Backup email was updated when only the primary should have been updated"
         }
 
-        context.global().put(ContextKeys.createdAccount, parsed)
+        context.put(ContextKeys.createdAccount, parsed)
+        context.put(ContextKeys.accountIdentifiers, parsed.identifiers)
+    }
+
+    @Step(name = "Update phone number")
+    void updatePhoneNumber(ScenarioContext context) {
+        def account = context.get(ContextKeys.createdAccount)
+        def newNumber = RandomFields.phoneNumber()
+
+        def response = given()
+                .pathParam("accountId", account.id)
+                .body(JsonOutput.toJson([
+                        "phoneNumber": [
+                                "number": newNumber
+                        ]
+                ]))
+                .when()
+                .patch("/accounts/{accountId}")
+                .then()
+                .statusCode(200)
+                .extract()
+
+        def parsed = Json.slurper.parseText(response.body().asString())
+
+        assert parsed.phoneNumber.number == newNumber : "Phone number was not updated"
+        assert parsed.phoneNumber.verified == false : "Phone number was verified even though it is not supposed to be"
+
+        def phoneNumberIdentifier = parsed.identifiers.find { it.type == "PHONE_NUMBER" }
+
+        assert phoneNumberIdentifier.identifier == newNumber : "Phone number was updated but the identifier was not"
+        assert phoneNumberIdentifier != null : "Phone number identifier was not added"
+        assert phoneNumberIdentifier.active : "Phone number identifier was created but is not active"
+        assert phoneNumberIdentifier.domain == "e2e" : "Phone number identifier was created but with the wrong domain"
+
+        context.put(ContextKeys.createdAccount, parsed)
+        context.put(ContextKeys.accountIdentifiers, parsed.identifiers)
     }
 
     @Step(name = "Update email")
     void updateBackupEmail(ScenarioContext context) {
-        def account = context.global().get(ContextKeys.createdAccount)
+        def account = context.get(ContextKeys.createdAccount)
         def newEmail = RandomFields.email()
 
         def response = given()
@@ -266,12 +303,12 @@ class AccountScenarios {
         assert parsed.backupEmail.verified == false : "Backup email was verified even though it is not supposed to be"
         assert parsed.email.email != newEmail : "Email was updated when only the backup should have been updated"
 
-        context.global().put(ContextKeys.createdAccount, parsed)
+        context.put(ContextKeys.createdAccount, parsed)
     }
 
     @Step(name = "Check if account exists")
     void accountExists(ScenarioContext context) {
-        def account = context.global().get(ContextKeys.createdAccount)
+        def account = context.get(ContextKeys.createdAccount)
         def email = account.email.email
 
         given()
