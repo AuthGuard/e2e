@@ -31,6 +31,8 @@ class AuthClientScenarios {
                         .step("createAccountWithDifferentDomain")
                         .step("createResetTokenDifferentDomain")
                         .step("authenticateWithDifferentDomain")
+                        .step("authenticateWithSourceIp")
+                        .step("authenticateWithUserAgent")
                         .build())
                 .build()
     }
@@ -212,6 +214,44 @@ class AuthClientScenarios {
                         identifier: "identifier",
                         password: "password",
                         domain: "other"
+                ]))
+                .when()
+                .post("/auth/authenticate")
+                .then()
+                .statusCode(403)
+                .extract()
+    }
+
+    @Step(description = "Authenticate with source IP (should be 403)")
+    void authenticateWithSourceIp(ScenarioContext context) {
+        def key = context.get(ContextKeys.key)
+
+        given()
+                .header(Headers.authorization, "Bearer " + key)
+                .body(JsonOutput.toJson([
+                        identifier: "identifier",
+                        password: "password",
+                        domain: "e2e",
+                        sourceIp: "127.0.0.1"
+                ]))
+                .when()
+                .post("/auth/authenticate")
+                .then()
+                .statusCode(403)
+                .extract()
+    }
+
+    @Step(description = "Authenticate with user agent (should be 403)")
+    void authenticateWithUserAgent(ScenarioContext context) {
+        def key = context.get(ContextKeys.key)
+
+        given()
+                .header(Headers.authorization, "Bearer " + key)
+                .body(JsonOutput.toJson([
+                        identifier: "identifier",
+                        password: "password",
+                        domain: "e2e",
+                        userAgent: "client"
                 ]))
                 .when()
                 .post("/auth/authenticate")

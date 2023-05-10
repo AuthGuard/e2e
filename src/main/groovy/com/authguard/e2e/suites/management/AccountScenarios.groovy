@@ -211,7 +211,7 @@ class AccountScenarios {
         def account = context.get(ContextKeys.createdAccount)
         def newEmail = RandomFields.email()
 
-        def response = given()
+        def updateRequest = given()
                 .pathParam("accountId", account.id)
                 .body(JsonOutput.toJson([
                         "email": [
@@ -224,24 +224,34 @@ class AccountScenarios {
                 .statusCode(200)
                 .extract()
 
-        def parsed = Json.slurper.parseText(response.body().asString())
+        def parsedUpdateResponse = Json.slurper.parseText(updateRequest.body().asString())
 
-        assert parsed.email.email == newEmail : "Email was not updated"
-        assert parsed.email.verified == false : "Email was verified even though it is not supposed to be"
+        def getRequest = given()
+                .pathParam("accountId", account.id)
+                .when()
+                .get("/accounts/{accountId}")
+                .then()
+                .statusCode(200)
+                .extract()
 
-        def emailIdentifier = parsed.identifiers.find { it.type == "EMAIL" }
+        def parsedGetResponse = Json.slurper.parseText(getRequest.body().asString())
 
-        assert emailIdentifier.identifier == newEmail : "Email was updated but the identifier was not"
+        assert parsedGetResponse.email.email == newEmail : "Email was not updated"
+        assert parsedGetResponse.email.verified == false : "Email was verified even though it is not supposed to be"
+
+        def emailIdentifier = parsedGetResponse.identifiers.find { it.type == "EMAIL" }
+
         assert emailIdentifier != null : "Email identifier was not added"
-        assert emailIdentifier.active : "Email identifier was created but is not active"
-        assert emailIdentifier.domain == "e2e" : "Email identifier was created but with the wrong domain"
+        assert emailIdentifier.identifier == newEmail : "Email was updated but the identifier was not"
+        assert parsedGetResponse.active : "Email identifier was created but is not active"
+        assert parsedGetResponse.domain == "e2e" : "Email identifier was created but with the wrong domain"
 
-        if (parsed.backupEmail) {
-            assert parsed.backupEmail.email != newEmail : "Backup email was updated when only the primary should have been updated"
+        if (parsedUpdateResponse.backupEmail) {
+            assert parsedGetResponse.backupEmail.email != newEmail : "Backup email was updated when only the primary should have been updated"
         }
 
-        context.put(ContextKeys.createdAccount, parsed)
-        context.put(ContextKeys.accountIdentifiers, parsed.identifiers)
+        context.put(ContextKeys.createdAccount, parsedUpdateResponse)
+        context.put(ContextKeys.accountIdentifiers, parsedUpdateResponse.identifiers)
     }
 
     @Step(name = "Update phone number")
