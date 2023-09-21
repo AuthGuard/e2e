@@ -8,7 +8,6 @@ import groovy.json.JsonOutput
 import io.restassured.RestAssured
 import io.restassured.filter.Filter
 import io.restassured.filter.FilterContext
-import io.restassured.http.Header
 import io.restassured.response.Response
 import io.restassured.specification.FilterableRequestSpecification
 import io.restassured.specification.FilterableResponseSpecification
@@ -35,7 +34,7 @@ class AdminSetup {
 
         createAccount(context, "global", idempotentKey, authHeader)
 //        createCredentials(context, "global", idempotentKey, authHeader)
-        createApplication(context, idempotentKey)
+        createClient(context, idempotentKey)
 
         def key = createApiKey(context)
 
@@ -110,7 +109,7 @@ class AdminSetup {
         context.global().put(ContextKeys.adminPassword, "Admin_password")
     }
 
-    private void createApplication(ScenarioContext context, String idempotentKey) {
+    private void createClient(ScenarioContext context, String idempotentKey) {
         def adminAccount = context.global().get(ContextKeys.adminAccount)
         def adminUsername = (String) context.global().get(ContextKeys.adminUsername)
         def adminPassword = (String) context.global().get(ContextKeys.adminPassword)
@@ -127,11 +126,11 @@ class AdminSetup {
                 .body(JsonOutput.toJson([
                         name: "AuthGuard E2E",
                         accountId: adminAccount.id,
-                        roles: ["authguard_admin_client"],
+                        clientType: "ADMIN",
                         domain: "global"
                 ]))
                 .when()
-                .post("/apps")
+                .post("/clients")
                 .then()
                 .statusCode(201)
                 .extract()
@@ -157,13 +156,14 @@ class AdminSetup {
         def response = given()
                 .header(Headers.authorization, authHeader)
                 .body(JsonOutput.toJson([
+                        forClient: true,
                         appId: adminApp.id,
                         keyType: "default"
                 ]))
                 .when()
                 .post("/keys")
                 .then()
-                .statusCode(201)
+                //.statusCode(201)
                 .extract()
 
         def parsed = Json.slurper.parseText(response.body().asString())

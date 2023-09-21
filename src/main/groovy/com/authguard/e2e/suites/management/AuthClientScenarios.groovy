@@ -44,11 +44,11 @@ class AuthClientScenarios {
                 .header(Headers.idempotentKey, UUID.randomUUID().toString())
                 .body(JsonOutput.toJson([
                         name: "Test auth app",
-                        roles: ["authguard_auth_client"],
+                        clientType: "AUTH",
                         domain: "e2e"
                 ]))
                 .when()
-                .post("/apps")
+                .post("/clients")
                 .then()
                 .statusCode(201)
                 .extract()
@@ -66,6 +66,7 @@ class AuthClientScenarios {
 
         def response = given()
                 .body(JsonOutput.toJson([
+                        forClient: true,
                         appId: app.id,
                         keyType: "default"
                 ]))
@@ -86,7 +87,7 @@ class AuthClientScenarios {
     void createAccountWithRoles(ScenarioContext context) {
         def key = context.get(ContextKeys.key)
 
-        given()
+        def response = given()
                 .header(Headers.idempotentKey, UUID.randomUUID().toString())
                 .header(Headers.authorization, "Bearer " + key)
                 .body(JsonOutput.toJson([
