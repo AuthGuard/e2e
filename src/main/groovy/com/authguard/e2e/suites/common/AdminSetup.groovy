@@ -181,8 +181,12 @@ class AdminSetup {
                         if (requestSpec != null) {
                             def headers = requestSpec.headers
                             def authorization = headers.get(Headers.authorization)
+                            def anonymous = headers.get(Headers.anonymous)
 
-                            if (authorization == null || authorization.value.isBlank()) {
+                            def isAnonymous = !(anonymous == null || anonymous.value.isBlank())
+                            def emptyAuthorization = authorization == null || authorization.value.isBlank()
+
+                            if (emptyAuthorization && !isAnonymous) {
                                 requestSpec.header(Headers.authorization, "Bearer " + apiKey)
                             }
                         }
