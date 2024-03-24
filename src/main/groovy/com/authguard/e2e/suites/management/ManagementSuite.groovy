@@ -3,6 +3,7 @@ package com.authguard.e2e.suites.management
 import com.authguard.e2e.suites.common.AdminSetup
 import com.authguard.e2e.suites.common.ContextKeys
 import com.authguard.e2e.suites.common.CreateAccount
+import com.authguard.e2e.suites.common.CreateApplication
 import com.authguard.e2e.suites.common.SetupHooks
 import com.authguard.e2e.suites.util.TestsConfig
 import org.scenario.annotations.SuiteDefinition
@@ -25,6 +26,7 @@ class ManagementSuite {
                 .loadHooks(new AdminSetup())
 //                .loadHooks(new GreenMailServerHooks())
                 .loadScenarios(new CreateAccount())
+                .loadScenarios(new CreateApplication())
                 .loadScenarios(new AccountScenarios())
                 .loadScenarios(new ApplicationScenarios())
                 .loadScenarios(new RolesScenarios())
@@ -34,7 +36,7 @@ class ManagementSuite {
                 .loadScenarios(new CredentialsScenarios())
                 .loadScenarios(new AuthClientScenarios())
                 .loadScenarios(new ActionTokenScenarios())
-                .loadScenarios(new OpenIDConnetScenario())
+//                .loadScenarios(new OpenIDConnetScenario())
 //                .loadScenarios(new OtpScenarios())
                 .build()
     }

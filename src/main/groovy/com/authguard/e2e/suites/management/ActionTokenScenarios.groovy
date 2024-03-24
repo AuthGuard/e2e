@@ -34,6 +34,7 @@ class ActionTokenScenarios {
         def password = context.global().get(ContextKeys.accountPassword)
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .body(JsonOutput.toJson([
                         type: "BASIC",
                         action: "reset",
@@ -44,7 +45,7 @@ class ActionTokenScenarios {
                         ]
                 ]))
                 .when()
-                .post("/actions/token")
+                .post("/domains/{domain}/actions/token")
                 .then()
                 .statusCode(201)
                 .extract()
@@ -64,12 +65,13 @@ class ActionTokenScenarios {
         def token = context.get(ContextKeys.token)
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .body(JsonOutput.toJson([
                         identifier: identifiers[0].identifier,
                         password: token
                 ]))
                 .when()
-                .post("/actions/verify?token=" + token + "&action=reset")
+                .post("/domains/{domain}/actions/verify?token=" + token + "&action=reset")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -83,12 +85,13 @@ class ActionTokenScenarios {
         def token = context.get(ContextKeys.token)
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .body(JsonOutput.toJson([
                         identifier: identifiers[0].identifier,
                         password: token
                 ]))
                 .when()
-                .post("/actions/verify?token=" + token + "&action=wrong")
+                .post("/domains/{domain}/actions/verify?token=" + token + "&action=wrong")
                 .then()
                 .statusCode(400)
                 .extract()

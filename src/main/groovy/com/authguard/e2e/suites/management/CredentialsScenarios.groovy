@@ -56,6 +56,7 @@ class CredentialsScenarios {
         def password = RandomFields.password()
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .header(Headers.idempotentKey, idempotentKey)
                 .body(JsonOutput.toJson([
                         email     : [email: RandomFields.email(), verified: false],
@@ -70,7 +71,7 @@ class CredentialsScenarios {
                         "plainPassword": password,
                 ]))
                 .when()
-                .post("/accounts")
+                .post("/domains/{domain}/accounts")
                 .then()
                 .statusCode(201)
                 .extract()
@@ -92,13 +93,14 @@ class CredentialsScenarios {
         def newPassword = RandomFields.password()
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .header(Headers.idempotentKey, UUID.randomUUID().toString())
                 .pathParam("credentialsId", credentials.id)
                 .body(JsonOutput.toJson([
                         "plainPassword": newPassword
                 ]))
                 .when()
-                .patch("/credentials/{credentialsId}/password")
+                .patch("/domains/{domain}/credentials/{credentialsId}/password")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -116,6 +118,7 @@ class CredentialsScenarios {
         def newEmail = RandomFields.email()
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .header(Headers.idempotentKey, UUID.randomUUID().toString())
                 .pathParam("credentialsId", credentials.id)
                 .body(JsonOutput.toJson([
@@ -128,7 +131,7 @@ class CredentialsScenarios {
                         ]
                 ]))
                 .when()
-                .patch("/credentials/{credentialsId}/identifiers")
+                .patch("/domains/{domain}/credentials/{credentialsId}/identifiers")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -136,10 +139,11 @@ class CredentialsScenarios {
         def parsed = Json.slurper.parseText(response.body().asString())
 
         def getCredentialsResponse = given()
+                .pathParam("domain", "e2e")
                 .header(Headers.idempotentKey, UUID.randomUUID().toString())
                 .pathParam("credentialsId", credentials.id)
                 .when()
-                .get("/accounts/{credentialsId}")
+                .get("/domains/{domain}/accounts/{credentialsId}")
                 .then()
                 .extract()
 
@@ -157,6 +161,7 @@ class CredentialsScenarios {
         def identifierToRemove = identifiers[0].identifier
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .header(Headers.idempotentKey, UUID.randomUUID().toString())
                 .pathParam("credentialsId", credentials.id)
                 .body(JsonOutput.toJson([
@@ -168,7 +173,7 @@ class CredentialsScenarios {
                         ]
                 ]))
                 .when()
-                .delete("/credentials/{credentialsId}/identifiers")
+                .delete("/domains/{domain}/credentials/{credentialsId}/identifiers")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -176,10 +181,11 @@ class CredentialsScenarios {
         def parsed = Json.slurper.parseText(response.body().asString())
 
         def getCredentialsResponse = given()
+                .pathParam("domain", "e2e")
                 .header(Headers.idempotentKey, UUID.randomUUID().toString())
                 .pathParam("credentialsId", credentials.id)
                 .when()
-                .get("/accounts/{credentialsId}")
+                .get("/domains/{domain}/accounts/{credentialsId}")
                 .then()
                 .extract()
 
@@ -198,6 +204,7 @@ class CredentialsScenarios {
         def newUsername = RandomFields.username()
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .header(Headers.idempotentKey, UUID.randomUUID().toString())
                 .pathParam("credentialsId", credentials.id)
                 .body(JsonOutput.toJson([
@@ -211,7 +218,7 @@ class CredentialsScenarios {
                         ]
                 ]))
                 .when()
-                .patch("/credentials/{credentialsId}/identifiers")
+                .patch("/domains/{domain}/credentials/{credentialsId}/identifiers")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -229,13 +236,14 @@ class CredentialsScenarios {
         def password = context.get(ContextKeys.oldPassword)
 
         given()
+                .pathParam("domain", "e2e")
                 .body(JsonOutput.toJson([
                         identifier: identifiers[0].identifier,
                         password: password,
                         domain: "e2e"
                 ]))
                 .when()
-                .post("/auth/authenticate")
+                .post("/domains/{domain}/auth/authenticate")
                 .then()
                 .statusCode(400)
                 .extract()
@@ -247,13 +255,14 @@ class CredentialsScenarios {
         def password = context.get(ContextKeys.accountPassword)
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .body(JsonOutput.toJson([
                         identifier: identifiers[0].identifier,
                         password: password,
                         domain: "e2e"
                 ]))
                 .when()
-                .post("/auth/authenticate")
+                .post("/domains/{domain}/auth/authenticate")
                 .then()
                 .extract()
 
@@ -268,13 +277,14 @@ class CredentialsScenarios {
         def password = context.get(ContextKeys.accountPassword)
 
         given()
+                .pathParam("domain", "e2e")
                 .body(JsonOutput.toJson([
                         identifier: identifier,
                         password: password,
                         domain: "e2e"
                 ]))
                 .when()
-                .post("/auth/authenticate")
+                .post("/domains/{domain}/auth/authenticate")
                 .then()
                 .statusCode(400)
                 .extract()
@@ -286,13 +296,14 @@ class CredentialsScenarios {
         def password = context.get(ContextKeys.accountPassword)
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .body(JsonOutput.toJson([
                         identifier: identifier,
                         password: password,
                         domain: "e2e"
                 ]))
                 .when()
-                .post("/auth/authenticate")
+                .post("/domains/{domain}/auth/authenticate")
                 .then()
                 .extract()
 
@@ -309,12 +320,13 @@ class CredentialsScenarios {
         def newPassword = RandomFields.password()
 
         def tokenResponse = given()
+                .pathParam("domain", "e2e")
                 .body(JsonOutput.toJson([
                         identifier: identifiers[0].identifier,
                         domain: "e2e"
                 ]))
                 .when()
-                .post("/credentials/reset_token")
+                .post("/domains/{domain}/credentials/reset_token")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -322,13 +334,15 @@ class CredentialsScenarios {
         def parsedTokenResponse = Json.slurper.parseText(tokenResponse.body().asString())
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .body(JsonOutput.toJson([
                         byToken: true,
                         resetToken: parsedTokenResponse.token,
-                        newPassword: newPassword
+                        newPassword: newPassword,
+                        domain: "e2e"
                 ]))
                 .when()
-                .post("/credentials/reset")
+                .post("/domains/{domain}/credentials/reset")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -347,6 +361,7 @@ class CredentialsScenarios {
         def newPassword = RandomFields.password()
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .body(JsonOutput.toJson([
                         byToken: false,
                         identifier: identifiers[0].identifier,
@@ -355,7 +370,7 @@ class CredentialsScenarios {
                         domain: "e2e"
                 ]))
                 .when()
-                .post("/credentials/reset")
+                .post("/domains/{domain}/credentials/reset")
                 .then()
                 .statusCode(200)
                 .extract()

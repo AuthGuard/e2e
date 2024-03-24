@@ -5,6 +5,7 @@ final class ContextKeys {
     public static final String otaUsername = "otaUsername"
     public static final String otaPassword = "otaPassword"
     public static final String createdAccount = "createdAccount"
+    public static final String createdApplication= "createdApplication"
     public static final String createdCredentials = "createdCredentials"
     public static final String accountIdentifiers = "identifiers"
     public static final String accountPassword = "password"
@@ -16,7 +17,8 @@ final class ContextKeys {
     public static final String key = "key"
     public static final String idempotentKey = "idempotentKey"
     public static final String emailServer = "emailServer"
-    public static final String roleName = "role"
+    public static final String accountRoleName = "accountRole"
+    public static final String appRoleName = "appRole"
     public static final String permissionGroup = "permissionGroup"
     public static final String permissionName = "permissionName"
     public static final String app = "app"
@@ -28,4 +30,5 @@ final class ContextKeys {
     public static final String oldIdentifier = "oldIdentifier"
     public static final String newIdentifier = "newIdentifier"
     public static final String authorizationCode = "authorizationCode"
+    public static final String authorizationCodeRequestToken = "authorizationCodeRequestToken"
 }

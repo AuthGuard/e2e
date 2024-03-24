@@ -36,13 +36,14 @@ class SessionScenarios {
         def password = context.global().get(ContextKeys.accountPassword)
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .body(JsonOutput.toJson([
                         identifier: identifiers[0].identifier,
                         password: password,
                         domain: "e2e"
                 ]))
                 .when()
-                .post("/auth/exchange?from=basic&to=sessionToken")
+                .post("/domains/{domain}/auth/exchange?from=basic&to=sessionToken")
                 .then()
                 .extract()
 
@@ -60,11 +61,12 @@ class SessionScenarios {
         def sessionToken = context.get(ContextKeys.token)
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .body(JsonOutput.toJson([
                         token: sessionToken
                 ]))
                 .when()
-                .post("/auth/exchange?from=sessionToken&to=session")
+                .post("/domains/{domain}/auth/exchange?from=sessionToken&to=session")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -77,11 +79,12 @@ class SessionScenarios {
         def sessionToken = context.get(ContextKeys.token)
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .body(JsonOutput.toJson([
                         token: sessionToken
                 ]))
                 .when()
-                .post("/auth/exchange/clear?tokenType=sessionToken")
+                .post("/domains/{domain}/auth/exchange/clear?tokenType=sessionToken")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -94,11 +97,12 @@ class SessionScenarios {
         def sessionToken = context.get(ContextKeys.token)
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .body(JsonOutput.toJson([
                         token: sessionToken
                 ]))
                 .when()
-                .post("/auth/exchange?from=sessionToken&to=session")
+                .post("/domains/{domain}/auth/exchange?from=sessionToken&to=session")
                 .then()
                 //.statusCode(400)
                 .extract()

@@ -39,6 +39,7 @@ class CreateAccount {
         def password = RandomFields.password()
 
         def response = given()
+                .pathParam("domain", domain)
                 .header(Headers.idempotentKey, idempotentKey)
                 .body(JsonOutput.toJson([
                         externalId: "external",
@@ -59,14 +60,14 @@ class CreateAccount {
                         domain: domain
                 ]))
                 .when()
-                .post("/accounts")
+                .post("/domains/{domain}/accounts")
                 .then()
                 .statusCode(201)
                 .extract()
 
         def parsed = Json.slurper.parseText(response.body().asString())
 
-        Logger.get().info("Created account successfully {}", parsed.id)
+        Logger.get().info("Created test account successfully {}", parsed.id)
 
         def emailIdentifier = parsed.identifiers.find { it.type == "EMAIL" }
         def phoneNumberIdentifier = parsed.identifiers.find { it.type == "PHONE_NUMBER" }

@@ -37,13 +37,14 @@ class AccessTokenScenarios {
         def password = context.global().get(ContextKeys.accountPassword)
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .body(JsonOutput.toJson([
                         identifier: identifiers[0].identifier,
                         password: password,
                         domain: "e2e"
                 ]))
                 .when()
-                .post("/auth/exchange?from=basic&to=accessToken")
+                .post("/domains/{domain}/auth/exchange?from=basic&to=accessToken")
                 .then()
                 .extract()
 
@@ -62,11 +63,12 @@ class AccessTokenScenarios {
         def refreshToken = context.get(ContextKeys.refreshToken)
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .body(JsonOutput.toJson([
                         token: refreshToken
                 ]))
                 .when()
-                .post("/auth/exchange?from=refresh&to=accessToken")
+                .post("/domains/{domain}/auth/exchange?from=refresh&to=accessToken")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -85,11 +87,12 @@ class AccessTokenScenarios {
         def refreshToken = context.get(ContextKeys.oldRefreshToken)
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .body(JsonOutput.toJson([
                         token: refreshToken
                 ]))
                 .when()
-                .post("/auth/exchange?from=refresh&to=accessToken")
+                .post("/domains/{domain}/auth/exchange?from=refresh&to=accessToken")
                 .then()
                 .statusCode(400)
                 .extract()
@@ -104,11 +107,12 @@ class AccessTokenScenarios {
         def refreshToken = context.get(ContextKeys.refreshToken)
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .body(JsonOutput.toJson([
                         token: refreshToken
                 ]))
                 .when()
-                .post("/auth/exchange/clear?tokenType=accessToken")
+                .post("/domains/{domain}/auth/exchange/clear?tokenType=accessToken")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -119,11 +123,12 @@ class AccessTokenScenarios {
         def refreshToken = context.get(ContextKeys.refreshToken)
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .body(JsonOutput.toJson([
                         token: refreshToken
                 ]))
                 .when()
-                .post("/auth/exchange?from=refresh&to=accessToken")
+                .post("/domains/{domain}/auth/exchange?from=refresh&to=accessToken")
                 .then()
                 .statusCode(400)
                 .extract()

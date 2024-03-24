@@ -27,9 +27,10 @@ class OpenIDConnetScenario {
                         .step("createApiKey")
                         .step("getLoginPage")
                         .step("getAuthorizationCode")
-                        .step("getAuthorizationCodeInvalidClient")
                         .step("exchangeAuthorizationCode")
                         .step("refresh")
+                        .step("getAuthorizationCodeInvalidClient")
+                        .step("getLoginPagePkce")
                         .step("getAuthorizationCodePkce")
                         .step("exchangeAuthorizationCodePkce")
                         .step("exchangeAuthorizationCodePkceInvalidVerifier")
@@ -97,11 +98,23 @@ class OpenIDConnetScenario {
         def response = given()
                 .header(Headers.anonymous, 1)
                 .when()
+                .redirects().follow(false)
                 .get(url)
                 .then()
                 .extract()
 
-        ResponseAssertions.assertStatusCode(response, 200)
+        ResponseAssertions.assertStatusCode(response, 302)
+
+        def redirectUrl = response.header(Headers.httpLocation)
+        def regex = ".*/oidc/login\\?redirect_uri=http://test-server.com/handler&token=.+"
+
+        assert redirectUrl.matches(regex) : "Redirect URL '" + redirectUrl + "' doesn't match the expected regex"
+
+        def token = redirectUrl.substring(redirectUrl.indexOf("token=") + 6)
+
+        assert token != null : "Token in URL was null"
+
+        context.put(ContextKeys.authorizationCodeRequestToken, token)
     }
 
     @Step(description = "Get authorization code")
@@ -110,58 +123,15 @@ class OpenIDConnetScenario {
         def app = context.get(ContextKeys.app)
         def identifiers = (List) context.global().get(ContextKeys.accountIdentifiers)
         def password = context.global().get(ContextKeys.accountPassword)
-        def state = RandomStringUtils.randomAlphanumeric(5)
+        def token = context.get(ContextKeys.authorizationCodeRequestToken)
 
         def response = given()
                 .header(Headers.anonymous, 1)
                 .body(JsonOutput.toJson([
-                        clientId: app.id,
-                        responseType: "code",
-                        scope: ["openid"],
+                        requestToken: token,
                         redirectUri: "http://test-server.com/handler",
-                        state: state,
                         identifier: identifiers[0].identifier,
                         password: password
-                ]))
-                .when()
-                .post("/oidc/auth")
-                .then()
-                .extract()
-
-        ResponseAssertions.assertStatusCode(response, 302)
-
-        def redirectUrl = response.header(Headers.httpLocation)
-        def regex = "http://test-server.com/handler\\?code=.+&state=.+"
-
-        assert redirectUrl.matches(regex) : "Redirect URL '" + redirectUrl + "' doesn't match the expected regex"
-
-        def authorizationCode = redirectUrl.substring(redirectUrl.indexOf("code=") + 5, redirectUrl.indexOf("&", redirectUrl.indexOf("code=")))
-
-        context.put(ContextKeys.authorizationCode, authorizationCode)
-    }
-
-    @Step(description = "Get authorization code (PKCE)")
-    @CircuitBreaker
-    void getAuthorizationCodePkce(ScenarioContext context) {
-        def app = context.get(ContextKeys.app)
-        def identifiers = (List) context.global().get(ContextKeys.accountIdentifiers)
-        def password = context.global().get(ContextKeys.accountPassword)
-        def state = RandomStringUtils.randomAlphanumeric(5)
-        // the SHA-256 of totally_random_plain
-        def codeChallenge = "17f40d40a02cc59818931d1ffb2415c75357977ee43719a8ef83fa9f807e262b"
-
-        def response = given()
-                .header(Headers.anonymous, 1)
-                .body(JsonOutput.toJson([
-                        clientId: app.id,
-                        responseType: "code",
-                        scope: ["openid"],
-                        redirectUri: "http://test-server.com/handler",
-                        state: state,
-                        identifier: identifiers[0].identifier,
-                        password: password,
-                        codeChallenge: codeChallenge,
-                        codeChallengeMethod: "S256"
                 ]))
                 .when()
                 .post("/oidc/auth")
@@ -184,16 +154,100 @@ class OpenIDConnetScenario {
     void getAuthorizationCodeInvalidClient(ScenarioContext context) {
         def identifiers = (List) context.global().get(ContextKeys.accountIdentifiers)
         def password = context.global().get(ContextKeys.accountPassword)
+
+        // step 1: get the login page to create the token for this request
         def state = RandomStringUtils.randomAlphanumeric(5)
+        def url = String.format("/oidc/auth?client_id=%s&scope=oidc&" +
+                "response_type=code&" +
+                "redirect_uri=http://test-server.com/handler&state=%s", "5", state)
+
+        def response = given()
+                .header(Headers.anonymous, 1)
+                .when()
+                .redirects().follow(false)
+                .get(url)
+                .then()
+                .extract()
+
+        ResponseAssertions.assertStatusCode(response, 302)
+
+        def pageRedirectUrl = response.header(Headers.httpLocation)
+        def regex = ".*/oidc/login\\?redirect_uri=http://test-server.com/handler&token=.+"
+
+        assert pageRedirectUrl.matches(regex) : "Redirect URL '" + pageRedirectUrl + "' doesn't match the expected regex"
+
+        def token = pageRedirectUrl.substring(pageRedirectUrl.indexOf("token=") + 6)
+
+        // step 2: use the token to create the request
+        response = given()
+                .header(Headers.anonymous, 1)
+                .body(JsonOutput.toJson([
+                        requestToken: token,
+                        redirectUri: "localhost:7000/handler",
+                        identifier: identifiers[0].identifier,
+                        password: password
+                ]))
+                .when()
+                .post("/oidc/auth")
+                .then()
+                .extract()
+
+        ResponseAssertions.assertStatusCode(response, 302)
+
+        def authRedirectUrl = response.header(Headers.httpLocation)
+        def expected = "localhost:7000/handler?error=unauthorized_client"
+
+        assert authRedirectUrl == expected : "Redirect URL '" + authRedirectUrl + "' doesn't match expected '" + expected + "'"
+    }
+
+    @Step(description = "Get login page (PKCE)")
+    @CircuitBreaker
+    void getLoginPagePkce(ScenarioContext context) {
+        def app = context.get(ContextKeys.app)
+        def state = RandomStringUtils.randomAlphanumeric(5)
+        // the SHA-256 of totally_random_plain
+        def codeChallenge = "17f40d40a02cc59818931d1ffb2415c75357977ee43719a8ef83fa9f807e262b"
+        def url = String.format("/oidc/auth?client_id=%s&scope=oidc&" +
+                "response_type=code&" +
+                "redirect_uri=http://test-server.com/handler&state=%s&code_challenge=%s&code_challenge_method=%s",
+                app.id, state, codeChallenge, "S256")
+
+        def response = given()
+                .header(Headers.anonymous, 1)
+                .when()
+                .redirects().follow(false)
+                .get(url)
+                .then()
+                .extract()
+
+        ResponseAssertions.assertStatusCode(response, 302)
+
+        def redirectUrl = response.header(Headers.httpLocation)
+        def regex = ".*/oidc/login\\?redirect_uri=http://test-server.com/handler&token=.+"
+
+        assert redirectUrl.matches(regex) : "Redirect URL '" + redirectUrl + "' doesn't match the expected regex"
+
+        def token = redirectUrl.substring(redirectUrl.indexOf("token=") + 6)
+
+        assert token != null : "Token in URL was null"
+
+        context.put(ContextKeys.authorizationCodeRequestToken, token)
+    }
+
+    @Step(description = "Get authorization code (PKCE)")
+    @CircuitBreaker
+    void getAuthorizationCodePkce(ScenarioContext context) {
+        def app = context.get(ContextKeys.app)
+        def identifiers = (List) context.global().get(ContextKeys.accountIdentifiers)
+        def password = context.global().get(ContextKeys.accountPassword)
+        def token = context.get(ContextKeys.authorizationCodeRequestToken)
 
         def response = given()
                 .header(Headers.anonymous, 1)
                 .body(JsonOutput.toJson([
-                        clientId: "not-registered",
-                        responseType: "code",
-                        scope: ["openid"],
-                        redirectUri: "localhost:7000/handler",
-                        state: state,
+                        clientId: app.id,
+                        requestToken: token,
+                        redirectUri: "http://test-server.com/handler",
                         identifier: identifiers[0].identifier,
                         password: password
                 ]))
@@ -205,9 +259,13 @@ class OpenIDConnetScenario {
         ResponseAssertions.assertStatusCode(response, 302)
 
         def redirectUrl = response.header(Headers.httpLocation)
-        def expected = "localhost:7000/handler?error=unauthorized_client"
+        def regex = "http://test-server.com/handler\\?code=.+&state=.+"
 
-        assert redirectUrl == expected : "Redirect URL '" + redirectUrl + "' doesn't match expected '" + expected + "'"
+        assert redirectUrl.matches(regex) : "Redirect URL '" + redirectUrl + "' doesn't match the expected regex"
+
+        def authorizationCode = redirectUrl.substring(redirectUrl.indexOf("code=") + 5, redirectUrl.indexOf("&", redirectUrl.indexOf("code=")))
+
+        context.put(ContextKeys.authorizationCode, authorizationCode)
     }
 
     @Step(description = "Exchange authorization code")
@@ -298,7 +356,7 @@ class OpenIDConnetScenario {
 
         def parsed = Json.slurper.parseText(response.body().asString())
 
-        assert parsed.code == "AT.039" : "Wrong error code (" + parsed.code + ")"
+        assert parsed.error == "AT.039" : "Wrong error code (" + parsed.code + ")"
     }
 
     @Step(name = "Refresh token")

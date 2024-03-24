@@ -41,6 +41,7 @@ class AuthClientScenarios {
     @CircuitBreaker
     void createAuthClient(ScenarioContext context) {
         def response = given()
+                .pathParam("domain", "e2e")
                 .header(Headers.idempotentKey, UUID.randomUUID().toString())
                 .body(JsonOutput.toJson([
                         name: "Test auth app",
@@ -48,7 +49,7 @@ class AuthClientScenarios {
                         domain: "e2e"
                 ]))
                 .when()
-                .post("/clients")
+                .post("/domains/{domain}/clients")
                 .then()
                 .statusCode(201)
                 .extract()
@@ -65,13 +66,14 @@ class AuthClientScenarios {
         def app = context.get(ContextKeys.app)
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .body(JsonOutput.toJson([
                         forClient: true,
                         appId: app.id,
                         keyType: "default"
                 ]))
                 .when()
-                .post("/keys")
+                .post("/domains/{domain}/keys")
                 .then()
                 .statusCode(201)
                 .extract()
@@ -88,6 +90,7 @@ class AuthClientScenarios {
         def key = context.get(ContextKeys.key)
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .header(Headers.idempotentKey, UUID.randomUUID().toString())
                 .header(Headers.authorization, "Bearer " + key)
                 .body(JsonOutput.toJson([
@@ -103,7 +106,7 @@ class AuthClientScenarios {
                         domain: "e2e"
                 ]))
                 .when()
-                .post("/accounts")
+                .post("/domains/{domain}/accounts")
                 .then()
                 .statusCode(403)
                 .extract()
@@ -114,6 +117,7 @@ class AuthClientScenarios {
         def key = context.get(ContextKeys.key)
 
         given()
+                .pathParam("domain", "e2e")
                 .header(Headers.idempotentKey, UUID.randomUUID().toString())
                 .header(Headers.authorization, "Bearer " + key)
                 .body(JsonOutput.toJson([
@@ -134,7 +138,7 @@ class AuthClientScenarios {
                         domain: "e2e"
                 ]))
                 .when()
-                .post("/accounts")
+                .post("/domains/{domain}/accounts")
                 .then()
                 .statusCode(403)
                 .extract()
@@ -146,13 +150,14 @@ class AuthClientScenarios {
         def identifiers = (List) context.global().get(ContextKeys.accountIdentifiers)
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .header(Headers.authorization, "Bearer " + key)
                 .body(JsonOutput.toJson([
                         "identifier": identifiers[0].identifier,
                         domain: "e2e"
                 ]))
                 .when()
-                .post("/credentials/reset_token")
+                .post("/domains/{domain}/credentials/reset_token")
                 .then()
                 .extract()
 
@@ -168,6 +173,7 @@ class AuthClientScenarios {
         def key = context.get(ContextKeys.key)
 
         given()
+                .pathParam("domain", "other")
                 .header(Headers.idempotentKey, UUID.randomUUID().toString())
                 .header(Headers.authorization, "Bearer " + key)
                 .body(JsonOutput.toJson([
@@ -182,7 +188,7 @@ class AuthClientScenarios {
                         ],
                 ]))
                 .when()
-                .post("/accounts")
+                .post("/domains/{domain}/accounts")
                 .then()
                 .statusCode(403)
                 .extract()
@@ -193,13 +199,14 @@ class AuthClientScenarios {
         def key = context.get(ContextKeys.key)
 
         given()
+                .pathParam("domain", "other")
                 .header(Headers.authorization, "Bearer " + key)
                 .body(JsonOutput.toJson([
                         "identifier": "identifier",
                         domain: "other"
                 ]))
                 .when()
-                .post("/credentials/reset_token")
+                .post("/domains/{domain}/credentials/reset_token")
                 .then()
                 .statusCode(403)
                 .extract()
@@ -210,6 +217,7 @@ class AuthClientScenarios {
         def key = context.get(ContextKeys.key)
 
         given()
+                .pathParam("domain", "e2e")
                 .header(Headers.authorization, "Bearer " + key)
                 .body(JsonOutput.toJson([
                         identifier: "identifier",
@@ -217,7 +225,7 @@ class AuthClientScenarios {
                         domain: "other"
                 ]))
                 .when()
-                .post("/auth/authenticate")
+                .post("/domains/{domain}/auth/authenticate")
                 .then()
                 .statusCode(403)
                 .extract()
@@ -228,6 +236,7 @@ class AuthClientScenarios {
         def key = context.get(ContextKeys.key)
 
         given()
+                .pathParam("domain", "e2e")
                 .header(Headers.authorization, "Bearer " + key)
                 .body(JsonOutput.toJson([
                         identifier: "identifier",
@@ -236,7 +245,7 @@ class AuthClientScenarios {
                         sourceIp: "127.0.0.1"
                 ]))
                 .when()
-                .post("/auth/authenticate")
+                .post("/domains/{domain}/auth/authenticate")
                 .then()
                 .statusCode(403)
                 .extract()
@@ -247,6 +256,7 @@ class AuthClientScenarios {
         def key = context.get(ContextKeys.key)
 
         given()
+                .pathParam("domain", "e2e")
                 .header(Headers.authorization, "Bearer " + key)
                 .body(JsonOutput.toJson([
                         identifier: "identifier",
@@ -255,7 +265,7 @@ class AuthClientScenarios {
                         userAgent: "client"
                 ]))
                 .when()
-                .post("/auth/authenticate")
+                .post("/domains/{domain}/auth/authenticate")
                 .then()
                 .statusCode(403)
                 .extract()

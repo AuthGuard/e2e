@@ -5,6 +5,9 @@ import com.authguard.e2e.suites.util.Headers
 import com.authguard.e2e.suites.util.Json
 import com.authguard.e2e.suites.util.Logger
 import groovy.json.JsonOutput
+import io.restassured.RestAssured
+import io.restassured.response.ExtractableResponse
+import io.restassured.response.Response
 import org.scenario.annotations.CircuitBreaker
 import org.scenario.annotations.Name
 import org.scenario.annotations.ScenarioDefinition
@@ -38,13 +41,14 @@ class ApplicationScenarios {
     @CircuitBreaker
     void createApp(ScenarioContext context, @Name(ContextKeys.idempotentKey) idempotentKey) {
         def response = given()
+                .pathParam("domain", "e2e")
                 .header(Headers.idempotentKey, idempotentKey)
                 .body(JsonOutput.toJson([
                         name: "Test scenario app",
                         domain: "e2e"
                 ]))
                 .when()
-                .post("/apps")
+                .post("/domains/{domain}/apps")
                 .then()
                 .statusCode(201)
                 .extract()
@@ -61,9 +65,10 @@ class ApplicationScenarios {
         def app = context.get(ContextKeys.app)
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .pathParam("appId", app.id)
                 .when()
-                .patch("/apps/{appId}/deactivate")
+                .patch("/domains/{domain}/apps/{appId}/deactivate")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -78,9 +83,10 @@ class ApplicationScenarios {
         def app = context.get(ContextKeys.app)
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .pathParam("appId", app.id)
                 .when()
-                .patch("/apps/{appId}/activate")
+                .patch("/domains/{domain}/apps/{appId}/activate")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -95,17 +101,19 @@ class ApplicationScenarios {
         def app = context.get(ContextKeys.app)
 
         given()
+                .pathParam("domain", "e2e")
                 .pathParam("appId", app.id)
                 .when()
-                .delete("/apps/{appId}")
+                .delete("/domains/{domain}/apps/{appId}")
                 .then()
                 .statusCode(200)
                 .extract()
 
         given()
+                .pathParam("domain", "e2e")
                 .pathParam("appId", app.id)
                 .when()
-                .get("/apps/{appId}")
+                .get("/domains/{domain}/apps/{appId}")
                 .then()
                 .statusCode(404)
                 .extract()
@@ -116,12 +124,13 @@ class ApplicationScenarios {
         def app = context.get(ContextKeys.app)
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .when()
                 .body(JsonOutput.toJson([
                         appId: app.id,
                         keyType: "jwtApiKey"
                 ]))
-                .post("/keys")
+                .post("/domains/{domain}/keys")
                 .then()
                 .statusCode(201)
                 .extract()
@@ -137,12 +146,13 @@ class ApplicationScenarios {
         def app = context.get(ContextKeys.app)
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .when()
                 .body(JsonOutput.toJson([
                         key: apiKey.key,
                         keyType: "jwtApiKey"
                 ]))
-                .post("/keys/verify")
+                .post("/domains/{domain}/keys/verify")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -157,9 +167,10 @@ class ApplicationScenarios {
         def app = context.get(ContextKeys.app)
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .pathParam("appId", app.id)
                 .when()
-                .get("/apps/{appId}/keys")
+                .get("/domains/{domain}/apps/{appId}/keys")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -174,17 +185,19 @@ class ApplicationScenarios {
         def apiKey = context.get(ContextKeys.temporaryKey)
 
         given()
+                .pathParam("domain", "e2e")
                 .pathParam("apiKeyId", apiKey.id)
                 .when()
-                .delete("/keys/{apiKeyId}")
+                .delete("/domains/{domain}/keys/{apiKeyId}")
                 .then()
                 .statusCode(200)
                 .extract()
 
         given()
+                .pathParam("domain", "e2e")
                 .pathParam("apiKeyId", apiKey.id)
                 .when()
-                .get("/keys/{apiKeyId}")
+                .get("/domains/{domain}/keys/{apiKeyId}")
                 .then()
                 .statusCode(404)
                 .extract()

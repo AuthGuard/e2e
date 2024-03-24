@@ -44,6 +44,7 @@ class AdminSetup {
     private void createAccount(ScenarioContext context, String domain,
                                String idempotentKey, String authHeader) {
         def response = given()
+                .pathParam("domain", domain)
                 .header(Headers.idempotentKey, idempotentKey)
                 .header(Headers.authorization, authHeader)
                 .body(JsonOutput.toJson([
@@ -59,7 +60,7 @@ class AdminSetup {
                         domain    : domain
                 ]))
                 .when()
-                .post("/accounts")
+                .post("/domains/{domain}/accounts")
                 .then()
                 .statusCode(201)
                 .extract()
@@ -121,6 +122,7 @@ class AdminSetup {
         def authHeader = "Basic " + basicAuth(adminUsername, adminPassword)
 
         def response = given()
+                .pathParam("domain", "global")
                 .header(Headers.idempotentKey, idempotentKey)
                 .header(Headers.authorization, authHeader)
                 .body(JsonOutput.toJson([
@@ -130,7 +132,7 @@ class AdminSetup {
                         domain: "global"
                 ]))
                 .when()
-                .post("/clients")
+                .post("/domains/{domain}/clients")
                 .then()
                 .statusCode(201)
                 .extract()
@@ -154,6 +156,7 @@ class AdminSetup {
         def authHeader = "Basic " + basicAuth(adminUsername, adminPassword)
 
         def response = given()
+                .pathParam("domain", "global")
                 .header(Headers.authorization, authHeader)
                 .body(JsonOutput.toJson([
                         forClient: true,
@@ -161,7 +164,7 @@ class AdminSetup {
                         keyType: "default"
                 ]))
                 .when()
-                .post("/keys")
+                .post("/domains/{domain}/keys")
                 .then()
                 //.statusCode(201)
                 .extract()

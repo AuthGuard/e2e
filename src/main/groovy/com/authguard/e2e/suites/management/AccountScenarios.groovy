@@ -58,6 +58,7 @@ class AccountScenarios {
         def password = RandomFields.password()
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .header(Headers.idempotentKey, idempotentKey)
                 .body(JsonOutput.toJson([
                         email     : [email: RandomFields.email(), verified: false],
@@ -72,7 +73,7 @@ class AccountScenarios {
                         "plainPassword": password,
                 ]))
                 .when()
-                .post("/accounts")
+                .post("/domains/{domain}/accounts")
                 .then()
                 .statusCode(201)
                 .extract()
@@ -90,6 +91,7 @@ class AccountScenarios {
     void createAccountDuplicateIdempotentKey(@Name(ContextKeys.idempotentKey) String idempotentKey) {
         given()
                 .header(Headers.idempotentKey, idempotentKey)
+                .pathParam("domain", "e2e")
                 .body(JsonOutput.toJson([
                         identifiers   : [
                                 [
@@ -101,7 +103,7 @@ class AccountScenarios {
                         domain: "e2e"
                 ]))
                 .when()
-                .post("/accounts")
+                .post("/domains/{domain}/accounts")
                 .then()
                 .statusCode(409)
                 .extract()
@@ -112,6 +114,7 @@ class AccountScenarios {
         def account = context.global().get(ContextKeys.createdAccount)
 
         given()
+                .pathParam("domain", "e2e")
                 .header(Headers.idempotentKey, UUID.randomUUID())
                 .body(JsonOutput.toJson([
                         email     : [
@@ -121,7 +124,7 @@ class AccountScenarios {
                         domain: "e2e"
                 ]))
                 .when()
-                .post("/accounts")
+                .post("/domains/{domain}/accounts")
                 .then()
                 .statusCode(409)
                 .extract()
@@ -135,6 +138,7 @@ class AccountScenarios {
         def username = identifiers.find { it.type == "USERNAME" }.identifier
 
         given()
+                .pathParam("domain", "e2e")
                 .header(Headers.idempotentKey, UUID.randomUUID().toString())
                 .body(JsonOutput.toJson([
                         identifiers   : [
@@ -147,7 +151,7 @@ class AccountScenarios {
                         domain: "e2e"
                 ]))
                 .when()
-                .post("/accounts")
+                .post("/domains/{domain}/accounts")
                 .then()
                 .statusCode(409)
                 .extract()
@@ -158,9 +162,10 @@ class AccountScenarios {
         def account = context.get(ContextKeys.createdAccount)
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .pathParam("accountId", account.id)
                 .when()
-                .patch("/accounts/{accountId}/deactivate")
+                .patch("/domains/{domain}/accounts/{accountId}/deactivate")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -177,13 +182,14 @@ class AccountScenarios {
         def password = context.get(ContextKeys.accountPassword)
 
         given()
+                .pathParam("domain", "e2e")
                 .body(JsonOutput.toJson([
                         identifier: identifiers[0].identifier,
                         password: password,
                         domain: "e2e"
                 ]))
                 .when()
-                .post("/auth/authenticate")
+                .post("/domains/{domain}/auth/authenticate")
                 .then()
                 .statusCode(400)
                 .extract()
@@ -194,9 +200,10 @@ class AccountScenarios {
         def account = context.get(ContextKeys.createdAccount)
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .pathParam("accountId", account.id)
                 .when()
-                .patch("/accounts/{accountId}/activate")
+                .patch("/domains/{domain}/accounts/{accountId}/activate")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -212,6 +219,7 @@ class AccountScenarios {
         def newEmail = RandomFields.email()
 
         def updateRequest = given()
+                .pathParam("domain", "e2e")
                 .pathParam("accountId", account.id)
                 .body(JsonOutput.toJson([
                         "email": [
@@ -219,7 +227,7 @@ class AccountScenarios {
                         ]
                 ]))
                 .when()
-                .patch("/accounts/{accountId}")
+                .patch("/domains/{domain}/accounts/{accountId}")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -227,9 +235,10 @@ class AccountScenarios {
         def parsedUpdateResponse = Json.slurper.parseText(updateRequest.body().asString())
 
         def getRequest = given()
+                .pathParam("domain", "e2e")
                 .pathParam("accountId", account.id)
                 .when()
-                .get("/accounts/{accountId}")
+                .get("/domains/{domain}/accounts/{accountId}")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -260,6 +269,7 @@ class AccountScenarios {
         def newNumber = RandomFields.phoneNumber()
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .pathParam("accountId", account.id)
                 .body(JsonOutput.toJson([
                         "phoneNumber": [
@@ -267,7 +277,7 @@ class AccountScenarios {
                         ]
                 ]))
                 .when()
-                .patch("/accounts/{accountId}")
+                .patch("/domains/{domain}/accounts/{accountId}")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -294,6 +304,7 @@ class AccountScenarios {
         def newEmail = RandomFields.email()
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .pathParam("accountId", account.id)
                 .body(JsonOutput.toJson([
                         "backupEmail": [
@@ -301,7 +312,7 @@ class AccountScenarios {
                         ]
                 ]))
                 .when()
-                .patch("/accounts/{accountId}")
+                .patch("/domains/{domain}/accounts/{accountId}")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -322,9 +333,10 @@ class AccountScenarios {
         def email = account.email.email
 
         given()
+                .pathParam("domain", "e2e")
                 .pathParam("email", email)
                 .when()
-                .get("/accounts/domain/e2e/email/{email}/exists")
+                .get("/domains/{domain}/accounts/email/{email}/exists")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -335,9 +347,10 @@ class AccountScenarios {
         def email = "nonexistent"
 
         given()
+                .pathParam("domain", "e2e")
                 .pathParam("email", email)
                 .when()
-                .get("/accounts/email/{email}/exists")
+                .get("/domains/{domain}/accounts/email/{email}/exists")
                 .then()
                 .statusCode(404)
                 .extract()

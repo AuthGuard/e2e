@@ -38,13 +38,16 @@ class PermissionsScenarios {
         def permissionName = RandomFields.permissionName()
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .body(JsonOutput.toJson([
                         group: permissionGroup,
                         name: permissionName,
-                        domain: "e2e"
+                        domain: "e2e",
+                        forAccounts: true,
+                        forApplications: false
                 ]))
                 .when()
-                .post("/permissions")
+                .post("/domains/{domain}/permissions")
                 .then()
                 .statusCode(201)
                 .extract()
@@ -72,6 +75,7 @@ class PermissionsScenarios {
         }
 
         given()
+                .pathParam("domain", "e2e")
                 .body(JsonOutput.toJson([
                         action: "GRANT",
                         permissions: [
@@ -82,13 +86,14 @@ class PermissionsScenarios {
                         ]
                 ]))
                 .when()
-                .patch("/accounts/" + userAccount.id + "/permissions")
+                .patch("/domains/{domain}/accounts/" + userAccount.id + "/permissions")
                 .then()
                 .extract()
 
         def accountResponse = given()
+                .pathParam("domain", "e2e")
                 .when()
-                .get("/accounts/" + userAccount.id)
+                .get("/domains/{domain}/accounts/" + userAccount.id)
                 .then()
                 .statusCode(200)
                 .extract()
@@ -115,6 +120,7 @@ class PermissionsScenarios {
         }
 
         given()
+                .pathParam("domain", "e2e")
                 .body(JsonOutput.toJson([
                         action: "REVOKE",
                         permissions: [
@@ -125,14 +131,15 @@ class PermissionsScenarios {
                         ]
                 ]))
                 .when()
-                .patch("/accounts/" + userAccount.id + "/permissions")
+                .patch("/domains/{domain}/accounts/" + userAccount.id + "/permissions")
                 .then()
                 .statusCode(200)
                 .extract()
 
         def accountResponse = given()
+                .pathParam("domain", "e2e")
                 .when()
-                .get("/accounts/" + userAccount.id)
+                .get("/domains/{domain}/accounts/" + userAccount.id)
                 .then()
                 .statusCode(200)
                 .extract()
@@ -148,13 +155,16 @@ class PermissionsScenarios {
         def permissionName = (String) context.get(ContextKeys.permissionName)
 
         given()
+                .pathParam("domain", "e2e")
                 .body(JsonOutput.toJson([
                         group: permissionGroup,
                         name: permissionName,
-                        domain: "e2e"
+                        domain: "e2e",
+                        forAccounts: true,
+                        forApplications: false
                 ]))
                 .when()
-                .post("/permissions")
+                .post("/domains/{domain}/permissions")
                 .then()
                 .statusCode(409)
                 .extract()
@@ -169,6 +179,7 @@ class PermissionsScenarios {
         }
 
         given()
+                .pathParam("domain", "e2e")
                 .body(JsonOutput.toJson([
                         action: "GRANT",
                         permissions: [
@@ -179,14 +190,15 @@ class PermissionsScenarios {
                         ]
                 ]))
                 .when()
-                .patch("/accounts/" + userAccount.id + "/permissions")
+                .patch("/domains/{domain}/accounts/" + userAccount.id + "/permissions")
                 .then()
                 .statusCode(400)
                 .extract()
 
         def accountResponse = given()
+                .pathParam("domain", "e2e")
                 .when()
-                .get("/accounts/" + userAccount.id)
+                .get("/domains/{domain}/accounts/" + userAccount.id)
                 .then()
                 .statusCode(200)
                 .extract()
@@ -211,6 +223,7 @@ class PermissionsScenarios {
         }
 
         given()
+                .pathParam("domain", "e2e")
                 .body(JsonOutput.toJson([
                         action: "REVOKE",
                         permissions: [
@@ -221,7 +234,7 @@ class PermissionsScenarios {
                         ]
                 ]))
                 .when()
-                .patch("/accounts/" + userAccount.id + "/permissions")
+                .patch("/domains/{domain}/accounts/" + userAccount.id + "/permissions")
                 .then()
                 .statusCode(200)
                 .extract()

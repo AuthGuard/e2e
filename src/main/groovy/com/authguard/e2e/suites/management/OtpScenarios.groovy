@@ -34,13 +34,14 @@ class OtpScenarios {
         def password = context.global().get(ContextKeys.accountPassword)
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .body(JsonOutput.toJson([
                         identifier: identifiers[0].identifier,
                         password: password,
                         domain: "e2e"
                 ]))
                 .when()
-                .post("/auth/exchange?from=basic&to=otp")
+                .post("/domains/{domain}/auth/exchange?from=basic&to=otp")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -62,12 +63,13 @@ class OtpScenarios {
         def otp = scanner.nextLine()
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .body(JsonOutput.toJson([
                         passwordId: otpId,
                         password: otp
                 ]))
                 .when()
-                .post("/otp/verify")
+                .post("/domains/{domain}/otp/verify")
                 .then()
                 .statusCode(200)
                 .extract()
