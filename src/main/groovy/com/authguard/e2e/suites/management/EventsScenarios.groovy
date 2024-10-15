@@ -17,7 +17,7 @@ class EventsScenarios {
     @ScenarioDefinition
     Scenario scenario() {
         return new Scenario.Builder()
-                .name("OpenID Connect auth code flow")
+                .name("Events")
                 .flow(new ScenarioFlow.Builder()
                         .instance(this)
                         .step("getAllEventsNoCursor")

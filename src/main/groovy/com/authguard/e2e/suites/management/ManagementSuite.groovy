@@ -37,7 +37,7 @@ class ManagementSuite {
                 .loadScenarios(new AuthClientScenarios())
                 .loadScenarios(new ActionTokenScenarios())
                 .loadScenarios(new EventsScenarios())
-//                .loadScenarios(new OpenIDConnetScenario())
+                .loadScenarios(new OpenIDConnetScenario())
 //                .loadScenarios(new OtpScenarios())
                 .build()
     }

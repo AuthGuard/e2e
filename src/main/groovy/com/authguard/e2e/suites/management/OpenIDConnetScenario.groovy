@@ -43,6 +43,7 @@ class OpenIDConnetScenario {
     @CircuitBreaker
     void createSsoClient(ScenarioContext context) {
         def response = given()
+                .pathParam("domain", "e2e")
                 .header(Headers.idempotentKey, UUID.randomUUID().toString())
                 .body(JsonOutput.toJson([
                         name: "Test SSO app",
@@ -51,7 +52,7 @@ class OpenIDConnetScenario {
                         baseUrl: "test-server.com"
                 ]))
                 .when()
-                .post("/clients")
+                .post("/domains/{domain}/clients")
                 .then()
                 .statusCode(201)
                 .extract()
@@ -68,13 +69,14 @@ class OpenIDConnetScenario {
         def app = context.get(ContextKeys.app)
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .body(JsonOutput.toJson([
                         forClient: true,
                         appId: app.id,
                         keyType: "default"
                 ]))
                 .when()
-                .post("/keys")
+                .post("/domains/{domain}/keys")
                 .then()
                 .statusCode(201)
                 .extract()
@@ -91,7 +93,7 @@ class OpenIDConnetScenario {
     void getLoginPage(ScenarioContext context) {
         def app = context.get(ContextKeys.app)
         def state = RandomStringUtils.randomAlphanumeric(5)
-        def url = String.format("/oidc/auth?client_id=%s&scope=oidc&" +
+        def url = String.format("/oidc/e2e/auth?client_id=%s&scope=oidc&" +
                 "response_type=code&" +
                 "redirect_uri=http://test-server.com/handler&state=%s", app.id, state)
 
@@ -106,7 +108,7 @@ class OpenIDConnetScenario {
         ResponseAssertions.assertStatusCode(response, 302)
 
         def redirectUrl = response.header(Headers.httpLocation)
-        def regex = ".*/oidc/login\\?redirect_uri=http://test-server.com/handler&token=.+"
+        def regex = ".*/oidc/e2e/login\\?redirect_uri=http://test-server.com/handler&token=.+"
 
         assert redirectUrl.matches(regex) : "Redirect URL '" + redirectUrl + "' doesn't match the expected regex"
 
@@ -126,6 +128,7 @@ class OpenIDConnetScenario {
         def token = context.get(ContextKeys.authorizationCodeRequestToken)
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .header(Headers.anonymous, 1)
                 .body(JsonOutput.toJson([
                         requestToken: token,
@@ -134,7 +137,7 @@ class OpenIDConnetScenario {
                         password: password
                 ]))
                 .when()
-                .post("/oidc/auth")
+                .post("/oidc/{domain}/auth")
                 .then()
                 .extract()
 
@@ -157,7 +160,7 @@ class OpenIDConnetScenario {
 
         // step 1: get the login page to create the token for this request
         def state = RandomStringUtils.randomAlphanumeric(5)
-        def url = String.format("/oidc/auth?client_id=%s&scope=oidc&" +
+        def url = String.format("/oidc/e2e/auth?client_id=%s&scope=oidc&" +
                 "response_type=code&" +
                 "redirect_uri=http://test-server.com/handler&state=%s", "5", state)
 
@@ -172,7 +175,7 @@ class OpenIDConnetScenario {
         ResponseAssertions.assertStatusCode(response, 302)
 
         def pageRedirectUrl = response.header(Headers.httpLocation)
-        def regex = ".*/oidc/login\\?redirect_uri=http://test-server.com/handler&token=.+"
+        def regex = ".*/oidc/e2e/login\\?redirect_uri=http://test-server.com/handler&token=.+"
 
         assert pageRedirectUrl.matches(regex) : "Redirect URL '" + pageRedirectUrl + "' doesn't match the expected regex"
 
@@ -180,6 +183,7 @@ class OpenIDConnetScenario {
 
         // step 2: use the token to create the request
         response = given()
+                .pathParam("domain", "e2e")
                 .header(Headers.anonymous, 1)
                 .body(JsonOutput.toJson([
                         requestToken: token,
@@ -188,7 +192,7 @@ class OpenIDConnetScenario {
                         password: password
                 ]))
                 .when()
-                .post("/oidc/auth")
+                .post("/oidc/{domain}/auth")
                 .then()
                 .extract()
 
@@ -207,7 +211,7 @@ class OpenIDConnetScenario {
         def state = RandomStringUtils.randomAlphanumeric(5)
         // the SHA-256 of totally_random_plain
         def codeChallenge = "17f40d40a02cc59818931d1ffb2415c75357977ee43719a8ef83fa9f807e262b"
-        def url = String.format("/oidc/auth?client_id=%s&scope=oidc&" +
+        def url = String.format("/oidc/e2e/auth?client_id=%s&scope=oidc&" +
                 "response_type=code&" +
                 "redirect_uri=http://test-server.com/handler&state=%s&code_challenge=%s&code_challenge_method=%s",
                 app.id, state, codeChallenge, "S256")
@@ -223,7 +227,7 @@ class OpenIDConnetScenario {
         ResponseAssertions.assertStatusCode(response, 302)
 
         def redirectUrl = response.header(Headers.httpLocation)
-        def regex = ".*/oidc/login\\?redirect_uri=http://test-server.com/handler&token=.+"
+        def regex = ".*/oidc/e2e/login\\?redirect_uri=http://test-server.com/handler&token=.+"
 
         assert redirectUrl.matches(regex) : "Redirect URL '" + redirectUrl + "' doesn't match the expected regex"
 
@@ -243,6 +247,7 @@ class OpenIDConnetScenario {
         def token = context.get(ContextKeys.authorizationCodeRequestToken)
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .header(Headers.anonymous, 1)
                 .body(JsonOutput.toJson([
                         clientId: app.id,
@@ -252,7 +257,7 @@ class OpenIDConnetScenario {
                         password: password
                 ]))
                 .when()
-                .post("/oidc/auth")
+                .post("/oidc/{domain}/auth")
                 .then()
                 .extract()
 
@@ -276,13 +281,14 @@ class OpenIDConnetScenario {
         def apiKey = context.get(ContextKeys.key)
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .header(Headers.anonymous, 1)
                 .formParam("grant_type", "authorization_code")
                 .formParam("code", authorizationCode)
                 .formParam("client_id", (String) app.id)
                 .formParam("client_secret", apiKey)
                 .when()
-                .post("/oidc/token")
+                .post("/oidc/{domain}/token")
                 .then()
                 .extract()
 
@@ -309,13 +315,14 @@ class OpenIDConnetScenario {
         def codeVerifier = "totally_random_plain"
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .header(Headers.anonymous, 1)
                 .formParam("grant_type", "authorization_code")
                 .formParam("code", authorizationCode)
                 .formParam("client_id", (String) app.id)
                 .formParam("code_verifier", codeVerifier)
                 .when()
-                .post("/oidc/token")
+                .post("/oidc/{domain}/token")
                 .then()
                 .extract()
 
@@ -342,13 +349,14 @@ class OpenIDConnetScenario {
         def codeVerifier = "wrong"
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .header(Headers.anonymous, 1)
                 .formParam("grant_type", "authorization_code")
                 .formParam("code", authorizationCode)
                 .formParam("client_id", (String) app.id)
                 .formParam("code_verifier", codeVerifier)
                 .when()
-                .post("/oidc/token")
+                .post("/oidc/{domain}/token")
                 .then()
                 .extract()
 
@@ -366,13 +374,14 @@ class OpenIDConnetScenario {
         def apiKey = context.get(ContextKeys.key)
 
         def response = given()
+                .pathParam("domain", "e2e")
                 .header(Headers.anonymous, 1)
                 .formParam("grant_type", "refresh_token")
                 .formParam("refresh_token", refreshToken)
                 .formParam("client_id", (String) app.id)
                 .formParam("client_secret", apiKey)
                 .when()
-                .post("/oidc/token")
+                .post("/oidc/{domain}/token")
                 .then()
                 .extract()
 
