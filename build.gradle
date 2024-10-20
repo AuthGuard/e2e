@@ -6,7 +6,6 @@ plugins {
 
 repositories {
     mavenCentral()
-    jcenter()
 }
 
 dependencies {
@@ -18,6 +17,8 @@ dependencies {
     implementation 'com.typesafe:config:1.2.0'
     implementation 'org.apache.commons:commons-lang3:3.11'
     implementation 'com.icegreen:greenmail:1.6.1'
+    implementation 'de.taimos:totp:1.0'
+    implementation 'com.google.zxing:javase:3.4.0'
 }
 
 application {

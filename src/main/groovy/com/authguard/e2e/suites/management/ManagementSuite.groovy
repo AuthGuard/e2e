@@ -39,6 +39,7 @@ class ManagementSuite {
                 .loadScenarios(new EventsScenarios())
                 .loadScenarios(new OpenIDConnetScenario())
                 .loadScenarios(new KeyManagementScenarios())
+                .loadScenarios(new TotpScenarios())
 //                .loadScenarios(new OtpScenarios())
                 .build()
     }
